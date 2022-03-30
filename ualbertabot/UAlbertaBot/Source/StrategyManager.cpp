@@ -44,19 +44,44 @@ const BuildOrder & StrategyManager::getOpeningBookBuildOrder() const
 
 const bool StrategyManager::shouldBuildNow() const
 {
-    std::vector<int> buildTimes = { 5};
-    int frame = BWAPI::Broodwar->getFrameCount();
-    int minute = frame / (24 * 60);
+    BWAPI::Race myRace = BWAPI::Broodwar->self()->getRace();
 
-    size_t numChamber = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Evolution_Chamber);
-    for (size_t i(0); i < buildTimes.size(); ++i)
-    {
-        if (numChamber < 1 && minute > buildTimes[i])
+    if (myRace == BWAPI::Races::Terran) {
+        std::vector<int> buildTimes = { 7, 12, 17 };
+        int frame = BWAPI::Broodwar->getFrameCount();
+        int minute = frame / (24 * 60);
+
+        int numBunkers = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker);
+
+        for (size_t i(0); i < buildTimes.size(); ++i)
         {
-            printf("\nStavaj chamber\n", i);
-            return true;
+            if (numBunkers < (i + 1) &&  minute > buildTimes[i])
+            {
+                printf("\nStavaj bunker\n", i);
+                return true;
+            }
         }
     }
+
+
+    if (myRace == BWAPI::Races::Zerg) {
+        std::vector<int> buildTimes = { 5 };
+        int frame = BWAPI::Broodwar->getFrameCount();
+        int minute = frame / (24 * 60);
+
+        size_t numChamber = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Evolution_Chamber);
+        for (size_t i(0); i < buildTimes.size(); ++i)
+        {
+            if (numChamber < 1 && minute > buildTimes[i])
+            {
+                printf("\nStavaj chamber\n", i);
+                return true;
+            }
+        }
+    }
+
+    return false;
+   
 }
 
 const bool StrategyManager::shouldUpgradeNow() const
@@ -189,7 +214,6 @@ const MetaPairVector StrategyManager::getProtossBuildOrderGoal() const
     int numDarkTeplar       = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Dark_Templar);
     int numGateway          = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Gateway);
     int numCorsair          = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Corsair);
-    int numCanon = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Photon_Cannon);
     int numShuttle = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Shuttle);
 
     if (Config::Strategy::StrategyName == "Protoss_ZealotRush")
@@ -288,7 +312,7 @@ const MetaPairVector StrategyManager::getProtossBuildOrderGoal() const
     if (shouldExpandNow())
     {
         goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Nexus, numNexusAll + 1));
-        goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Photon_Cannon, numNexusAll + 1));
+        goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Photon_Cannon, numCannon + 1));
     }
 
     return goal;
@@ -369,8 +393,12 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal() const
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Command_Center, numCC + 1));
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_SCV, numWorkers + 10));
         //nove
-        goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Bunker, 1));
+      
     }
+
+    if (shouldBuildNow())
+        goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Bunker, numBunker + 1));
+
     return goal;
 }
 

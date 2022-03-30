@@ -58,10 +58,6 @@ void MeleeManager::assignTargetsOld(const BWAPI::Unitset & targets)
             // if there are no targets
             else
             {
-                /*if (meleeUnit->getType() == BWAPI::UnitTypes::Protoss_Corsair) {
-                    BWAPI::Position fleeTo(BWAPI::Broodwar->enemy()->getStartLocation());
-                    Micro::SmartMove(meleeUnit, fleeTo);
-                }*/
                 // if we're not near the order position
                 if (meleeUnit->getDistance(m_order.getPosition()) > 100)
                 {

@@ -58,7 +58,7 @@ void Squad::update()
         BWAPI::Broodwar->drawCircleMap(regroupPosition.x, regroupPosition.y, 30, BWAPI::Colors::Purple, true);
 
         m_meleeManager.regroup(regroupPosition);
-       // m_rangedManager.regroup(regroupPosition);
+        m_rangedManager.regroup(regroupPosition);
         m_tankManager.regroup(regroupPosition);
         m_medicManager.regroup(regroupPosition);
     }

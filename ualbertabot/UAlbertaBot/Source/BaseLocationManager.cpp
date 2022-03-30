@@ -7,7 +7,7 @@
 #include "UnitData.h"
 
 #include "BWEM/src/bwem.h"
-
+#include "UnitUtil.h"
 
 using namespace BWEM;
 using namespace BWEM::BWAPI_ext;
@@ -350,3 +350,38 @@ BWAPI::TilePosition BaseLocationManager::getNextExpansion(BWAPI::Player player) 
 
     return closestBase ? closestBase->getDepotPosition() : BWAPI::TilePosition(0, 0);
 }
+
+BWAPI::TilePosition BaseLocationManager::getDefensePosition(BWAPI::Player player) const
+{
+    PROFILE_FUNCTION();
+
+    const BaseLocation* homeBase = getPlayerStartingBaseLocation(player);
+    const BaseLocation* closestBase = nullptr;
+    int minDistance = std::numeric_limits<int>::max();
+    int i = 0;
+    int numBunkers = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker);
+    BWAPI::TilePosition homeTile(homeBase->getPosition());
+    for (auto& base : getBaseLocations())
+    {
+        // skip mineral only and starting locations (TODO: fix this)
+        if (base->isMineralOnly() || base->isStartLocation() ||
+            base->isOccupiedByPlayer(BWAPI::Broodwar->enemy()))
+        {
+            continue;
+        }
+        
+
+        if (base->isOccupiedByPlayer(BWAPI::Broodwar->self()) && i == numBunkers) {
+            // get the tile position of the base
+
+            BWAPI::TilePosition tile = base->getDepotPosition();
+            closestBase = base;
+            break;
+        }
+        if (base->isOccupiedByPlayer(BWAPI::Broodwar->self()))
+             i++;
+    }
+
+    return closestBase ? closestBase->getDepotPosition() : BWAPI::TilePosition(0, 0);
+}
+

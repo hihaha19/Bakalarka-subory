@@ -38,5 +38,7 @@ public:
 
     BWAPI::TilePosition getNextExpansion(BWAPI::Player player) const;
 
+    BWAPI::TilePosition getDefensePosition(BWAPI::Player player) const;
+
 };
 }

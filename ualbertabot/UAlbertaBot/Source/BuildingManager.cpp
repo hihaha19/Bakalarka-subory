@@ -91,17 +91,12 @@ void BuildingManager::assignWorkersToUnassignedBuildings()
         }
 
         if (m_debugMode) { BWAPI::Broodwar->printf("Assigning Worker To: %s",b.type.getName().c_str()); }
-
+ //       printf("Nazov budovy %s\n", b.type.getName().c_str());
         // grab a worker unit from WorkerManager which is closest to this final position
         BWAPI::Unit workerToAssign = Global::Workers().getBuilder(b);
 
         if (workerToAssign)
         {
-            //BWAPI::Broodwar->printf("VALID WORKER BEING ASSIGNED: %d", workerToAssign->getID());
-
-            // TODO: special case of terran building whose worker died mid construction
-            //       send the right click command to the buildingUnit to resume construction
-            //		 skip the buildingsAssigned step and push it back into buildingsUnderConstruction
 
             b.builderUnit = workerToAssign;
 
@@ -110,52 +105,111 @@ void BuildingManager::assignWorkersToUnassignedBuildings()
             bool startingLocationsOK = theMap.FindBasesForStartingLocations();
             assert(startingLocationsOK);
 
-           if(UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Nexus == 1) ||
-               UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hatchery == 1) ||
-                   UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center) == 1) {
-               auto chokePoints = theMap.GetArea(BWAPI::Broodwar->self()->getStartLocation())->ChokePoints();
-               if (b.type == BWAPI::UnitTypes::Terran_Bunker || b.type == BWAPI::UnitTypes::Protoss_Photon_Cannon ||
-                   b.type == BWAPI::UnitTypes::Zerg_Creep_Colony) {
-                   for (auto& choke : chokePoints)
-                   {
-                       b.desiredPosition = (BWAPI::TilePosition)choke->Center();
-                       break;
-                   }
-               }
-           }
+       /*     int numCommandCenter = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center);
+            int numNexusAll = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Nexus);
+            int numHatchery = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hatchery)
+                + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair)
+                + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hive);
 
-           else {
-               for (auto& building : BWAPI::Broodwar->self()->getUnits())
-               {
-                   if (!building->getType() == BWAPI::UnitTypes::Terran_Command_Center ||
-                       !building->getType() == BWAPI::UnitTypes::Protoss_Nexus ||
-                       !building->getType() == BWAPI::UnitTypes::Zerg_Hatchery ||
-                       !building->getType() == BWAPI::UnitTypes::Zerg_Lair)
-                   {
-                       continue;
-                   }
-                   else {
-                       auto area = theMap.GetArea((BWAPI::TilePosition)building->getPosition()); // zisti v akej arei sa nachadza budova
-                       if (area != theMap.GetArea(BWAPI::Broodwar->self()->getStartLocation())) {   // nech to nie je start lokacia
-                           auto chokeBody = area->ChokePoints();
-                           for (auto& choke : chokeBody)               // zisti jeho polohu a daj ako desired position tuto polohu
-                           {
-                               b.desiredPosition = (BWAPI::TilePosition)choke->Center();
-                               break;
-                           }
-                       }
+            if (b.type == BWAPI::UnitTypes::Terran_Bunker || b.type == BWAPI::UnitTypes::Protoss_Photon_Cannon ||
+                b.type == BWAPI::UnitTypes::Zerg_Creep_Colony) {
+                if (numCommandCenter == 1 || numNexusAll == 1 || numHatchery == 1) {
 
-                   }
-               }
-           }
-
-            
+                    auto chokePoints = theMap.GetArea(BWAPI::Broodwar->self()->getStartLocation())->ChokePoints();
+                    for (auto& choke : chokePoints)
+                    {
+                        b.desiredPosition = (BWAPI::TilePosition)choke->Center();
+                        break;
+                    }
+                }
 
 
+                else {
+                    for (auto& building : BWAPI::Broodwar->self()->getUnits())
+                    {
+                        if (!building->getType().isBuilding())
+                            continue;
+
+                        if (!building->getType() == BWAPI::UnitTypes::Terran_Command_Center ||
+                            !building->getType() == BWAPI::UnitTypes::Protoss_Nexus ||
+                            !building->getType() == BWAPI::UnitTypes::Zerg_Hatchery ||
+                            !building->getType() == BWAPI::UnitTypes::Zerg_Lair)
+
+                            continue;
 
 
+                        else {
+                          //  auto area = theMap.GetArea((BWAPI::TilePosition)building->getPosition()); // zisti v akej arei sa nachadza budova
+                            for (auto& building : BWAPI::Broodwar->self()->getUnits()) {
+                                if (!building->getType().isBuilding())
+                                    continue;
+
+                                if (!building->getType() == BWAPI::UnitTypes::Terran_Command_Center ||
+                                    !building->getType() == BWAPI::UnitTypes::Protoss_Nexus ||
+                                    !building->getType() == BWAPI::UnitTypes::Zerg_Hatchery ||
+                                    !building->getType() == BWAPI::UnitTypes::Zerg_Lair)
+                                    continue;
+
+                                b.desiredPosition = building->getTilePosition();
+                            }
+                          //  building->getTilePosition();
+                         //   b.desiredPosition = building->getTilePosition();
+                         /*   if (area != theMap.GetArea(BWAPI::Broodwar->self()->getStartLocation())) {   // nech to nie je start lokacia
+                                auto chokeBody = area->ChokePoints();
+                                for (auto& choke : chokeBody)               // zisti jeho polohu a daj ako desired position tuto polohu
+                                {
+                                    
+                                    break;
+
+                                }
+
+                            }
+
+                           // else continue;
+                        }
+                        break;
+                    }
+
+                }
+            }
+
+            */
+
+            if (b.type == BWAPI::UnitTypes::Terran_Bunker ||
+                b.type == BWAPI::UnitTypes::Protoss_Photon_Cannon ||
+                b.type == BWAPI::UnitTypes::Zerg_Creep_Colony) {
+                int frame = BWAPI::Broodwar->getFrameCount();
+                int minute = frame / (24 * 60);
+                if (minute > 7) {
+                    auto tile = Global::Bases().getDefensePosition(BWAPI::Broodwar->self());
+                    b.desiredPosition = tile;
+                    printf("Desired %d %d\n", b.desiredPosition.x, b.desiredPosition.y);
+                }
+
+                else {
+                    theMap.Initialize(BWAPI::BroodwarPtr);
+                    theMap.EnableAutomaticPathAnalysis();
+                    bool startingLocationsOK = theMap.FindBasesForStartingLocations();
+                    assert(startingLocationsOK);
+
+                    auto chokePoints = theMap.GetArea(BWAPI::Broodwar->self()->getStartLocation())->ChokePoints();
+
+                        for (auto& choke : chokePoints)
+                        {
+                            b.desiredPosition = (BWAPI::TilePosition)choke->Center();
+                            printf("Choke pointy X %d Y %d\n", b.desiredPosition);
+                            //    b.finalPosition.x = b.finalPosition.x - 10;
+                            //    BWAPI::Game::canBuildHere(b.finalPosition, b.type, b.builderUnit);
+                        }
+                    }
+                
+
+            }
+
+
+           
             BWAPI::TilePosition testLocation = getBuildingLocation(b);
-            
+
             if (!testLocation.isValid())
             {
                 continue;
@@ -163,31 +217,7 @@ void BuildingManager::assignWorkersToUnassignedBuildings()
 
             b.finalPosition = testLocation;
             // ak chcem rucne zadat poziciu bunkru
-            
-            
-
-         /*   theMap.Initialize(BWAPI::BroodwarPtr);
-            theMap.EnableAutomaticPathAnalysis();
-            bool startingLocationsOK = theMap.FindBasesForStartingLocations();
-            assert(startingLocationsOK);
-
-            
-            
-            auto chokePoints = theMap.GetArea(BWAPI::Broodwar->self()->getStartLocation())->ChokePoints();
-        
-
-            printf("Pocet choke pointov %d\n", chokePoints.size());
-            
-            if (b.type == BWAPI::UnitTypes::Terran_Bunker) {
-                for (auto& choke : chokePoints)
-                {
-                    b.finalPosition = (BWAPI::TilePosition)choke->Center();
-                    printf("Choke pointy X %d Y %d\n", b.finalPosition);
-                //    b.finalPosition.x = b.finalPosition.x - 10;
-                //    BWAPI::Game::canBuildHere(b.finalPosition, b.type, b.builderUnit);
-                }
-            }
-            */
+             
             
             // reserve this building's space
             m_buildingPlacer.reserveTiles(b.finalPosition,b.type.tileWidth(),b.type.tileHeight());
@@ -195,6 +225,8 @@ void BuildingManager::assignWorkersToUnassignedBuildings()
         }
     }
 }
+
+
 
 //void BWAPI::RegionInterface::getDefensePriority() const
 
@@ -518,8 +550,9 @@ BWAPI::TilePosition BuildingManager::getBuildingLocation(const Building & b)
     if (b.type.isResourceDepot())
     {
         // get the location 
+        printf("Nazov budovy %s\n", b.type.getName().c_str());
 		auto tile = Global::Bases().getNextExpansion(BWAPI::Broodwar->self());
-
+        printf("Tile x = %d, y = %d\n", tile.x, tile.y);
         return tile;
     }
 
