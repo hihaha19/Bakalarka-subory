@@ -47,7 +47,7 @@ const bool StrategyManager::shouldBuildNow() const
     BWAPI::Race myRace = BWAPI::Broodwar->self()->getRace();
 
     if (myRace == BWAPI::Races::Terran) {
-        std::vector<int> buildTimes = { 7, 12, 17 };
+        std::vector<int> buildTimes = { 7, 12, 22, 32, 42, 52 };
         int frame = BWAPI::Broodwar->getFrameCount();
         int minute = frame / (24 * 60);
 
@@ -55,12 +55,19 @@ const bool StrategyManager::shouldBuildNow() const
 
         for (size_t i(0); i < buildTimes.size(); ++i)
         {
-            if (numBunkers < (i + 1) &&  minute > buildTimes[i])
+            if (numBunkers < (i + 3) &&  minute > buildTimes[i])
             {
                 printf("\nStavaj bunker\n", i);
                 return true;
             }
         }
+
+        if (BWAPI::Broodwar->self()->minerals() > 3000)
+        {
+            printf("Máme viac ako 3000 mineralov, stavaj bunker\n");
+            return true;
+        }
+
     }
 
 
@@ -68,20 +75,35 @@ const bool StrategyManager::shouldBuildNow() const
         std::vector<int> buildTimes = { 5 };
         int frame = BWAPI::Broodwar->getFrameCount();
         int minute = frame / (24 * 60);
+        
+        
+        std::vector<int> buildTimesSunken = { 7, 9, 12, 32, 42, 52};
 
-        size_t numChamber = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Evolution_Chamber);
-        for (size_t i(0); i < buildTimes.size(); ++i)
+        int numColony = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Creep_Colony) + 
+            UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Sunken_Colony);
+
+        size_t numDepots = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hatchery)
+            + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair)
+            + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hive);
+
+       /* for (size_t i(0); i < buildTimesSunken.size(); ++i)
         {
-            if (numChamber < 1 && minute > buildTimes[i])
+            printf("I je %d\n", i);
+            if (numColony < (i + 2) && minute >= buildTimesSunken[i])
             {
-                printf("\nStavaj chamber\n", i);
+                printf("\nStavaj sunken po urcitom case %d\n", i);
                 return true;
             }
+        }*/
+        printf("num depots %d\n", numDepots);
+            if (numColony <= (numDepots * 2))
+            {
+                printf("\nStavaj sunken pri pocte hatchery\n");
+                return true;      
         }
     }
 
     return false;
-   
 }
 
 const bool StrategyManager::shouldUpgradeNow() const
@@ -93,16 +115,15 @@ const bool StrategyManager::shouldUpgradeNow() const
     size_t numChamber = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Evolution_Chamber);
     size_t numLair = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair);
     if (numChamber != 0 && numLair == 0) {
-
         for (auto& unit : BWAPI::Broodwar->self()->getUnits())
         {
-
             if (unit->getType() == BWAPI::UnitTypes::Zerg_Evolution_Chamber) {
                 for (size_t i(0); i < buildTimes.size(); ++i)
                 {
                     unit->upgrade(BWAPI::UpgradeTypes::Zerg_Missile_Attacks);
-                    printf("Gas price factor %d\n", BWAPI::UpgradeTypes::Zerg_Missile_Attacks.gasPriceFactor());
-                    printf("Gas price  %d\n", BWAPI::UpgradeTypes::Zerg_Missile_Attacks.gasPrice());
+                    printf("Missile attacks\n");
+               //     printf("Gas price factor %d\n", BWAPI::UpgradeTypes::Zerg_Missile_Attacks.gasPriceFactor());
+                 //   printf("Gas price  %d\n", BWAPI::UpgradeTypes::Zerg_Missile_Attacks.gasPrice());
                 }
 
 
@@ -115,11 +136,10 @@ const bool StrategyManager::shouldUpgradeNow() const
     if (numLair != 0) {
         for (auto& unit : BWAPI::Broodwar->self()->getUnits())
         {
-
             if (unit->getType() == BWAPI::UnitTypes::Zerg_Evolution_Chamber) {
                 unit->upgrade(BWAPI::UpgradeTypes::Zerg_Missile_Attacks);
-                printf("Gas price factor %d\n", BWAPI::UpgradeTypes::Zerg_Missile_Attacks.gasPriceFactor());
-                printf("Gas price  %d\n", BWAPI::UpgradeTypes::Zerg_Missile_Attacks.gasPrice());
+          //      printf("Gas price factor %d\n", BWAPI::UpgradeTypes::Zerg_Missile_Attacks.gasPriceFactor());
+            //    printf("Gas price  %d\n", BWAPI::UpgradeTypes::Zerg_Missile_Attacks.gasPrice());
             }
         }
     }
@@ -240,7 +260,7 @@ const MetaPairVector StrategyManager::getProtossBuildOrderGoal() const
     }
     else if (Config::Strategy::StrategyName == "Protoss_Drop")
     {
-        if(numShuttle < 2)
+        if(numShuttle == 0)
             goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Shuttle, numShuttle+1));
         
         if (numZealots == 0)
@@ -250,6 +270,7 @@ const MetaPairVector StrategyManager::getProtossBuildOrderGoal() const
         }
         else
         {
+           // goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Dark_Templar, 5));
             goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Zealot, numZealots + 8));
         }
     }
@@ -274,24 +295,6 @@ const MetaPairVector StrategyManager::getProtossBuildOrderGoal() const
         goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Observer, 1));
     }
 
-    // ak nepriatel ma zakopatelnu jednotku, pridane
-    for (auto& unit : BWAPI::Broodwar->enemy()->getUnits())
-    {
-        if (unit->canBurrow())
-        {
-            goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Robotics_Facility, 1));
-
-            if (BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Protoss_Robotics_Facility) > 0)
-            {
-                goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Observatory, 1));
-            }
-            if (BWAPI::Broodwar->self()->completedUnitCount(BWAPI::UnitTypes::Protoss_Observatory) > 0)
-            {
-                goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Observer, 1));
-            }
-            break;
-        }
-    }
 
     // add observer to the goal if the enemy has cloaked units 
     if (Global::Info().enemyHasCloakedUnits())
@@ -339,9 +342,10 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal() const
 
     if (Config::Strategy::StrategyName == "Terran_Defense")
     {   //na koniec goal sa vyrobi +8 marines
+        printf("Boss\n");
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, 4));
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Firebat, 7));
-        if(numMedics == 0)
+        if(numMedics < 3)
             goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Medic, numMedics+1));
     }
 
@@ -349,7 +353,6 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal() const
     {   //na koniec goal sa vyrobi +8 marines
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, numMarines + 8));
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Refinery, 1));
-
         if (numMarines > 5)
         {   // ak mam viac ako 5 marinakov, vyrobi sa engineering_bay
             goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Engineering_Bay, 1));
@@ -393,7 +396,7 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal() const
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Command_Center, numCC + 1));
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_SCV, numWorkers + 10));
         //nove
-      
+     //   goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Bunker, numBunker + 1));
     }
 
     if (shouldBuildNow())
@@ -441,10 +444,21 @@ const MetaPairVector StrategyManager::getZergBuildOrderGoal() const
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Hydralisk, numHydras + 8));
         goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Grooved_Spines, 1));
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Drone, numDrones + 4));
-        if (numSunken < 3)
-            goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Creep_Colony, numSunken + 1));
-      //  if (numEvolutionChamber == 0)
-        //    goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Evolution_Chamber, numEvolutionChamber + 1));
+        //nove
+        goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Muscular_Augments, 1));
+        goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Hatchery, numCC + 1));
+        if(BWAPI::Broodwar->self()->minerals() > 1000)
+            goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Zergling, zerglings + 6));
+
+        if (zerglings > 5)
+            goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Metabolic_Boost, 1));
+        if (numEvolutionChamber < 2)
+              goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Evolution_Chamber, numEvolutionChamber + 2));
+
+        if (numSunken < 6) {
+            goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Creep_Colony, numCreep + 1));
+            printf("Stavaj sunken\n");
+        }
 
     }
 
@@ -470,12 +484,15 @@ const MetaPairVector StrategyManager::getZergBuildOrderGoal() const
 
     if (shouldExpandNow())
     {
+        printf("Expandujem\n");
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Hatchery, numCC + 1));
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Drone, numWorkers + 10));
     }
 
-    if(shouldBuildNow())
-        goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Evolution_Chamber, numEvolutionChamber + 1));
+    if (shouldBuildNow()) { 
+        goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Creep_Colony, numCreep + 2));
+    }
+       
 
     shouldUpgradeNow();
 

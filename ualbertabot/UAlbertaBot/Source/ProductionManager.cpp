@@ -282,7 +282,7 @@ BWAPI::Unit ProductionManager::getProducer(MetaType t, BWAPI::Position closestTo
 
 
                if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Zerg) {
-                   if (BWAPI::Broodwar->self()->minerals() > 500)
+                   if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair) == 0)
                        if (unit->getType() == BWAPI::UnitTypes::Zerg_Hatchery) 
                            unit->morph(BWAPI::UnitTypes::Zerg_Lair);
                        
@@ -292,14 +292,21 @@ BWAPI::Unit ProductionManager::getProducer(MetaType t, BWAPI::Position closestTo
                
                    
 
-                   if (unit->getType() == BWAPI::UnitTypes::Zerg_Lair) 
+                   if (unit->getType() == BWAPI::UnitTypes::Zerg_Lair) {
                        unit->upgrade(BWAPI::UpgradeTypes::Pneumatized_Carapace);
+                   }
+                       
                    
+                   if (unit->getType() == BWAPI::UnitTypes::Zerg_Evolution_Chamber)
+                       unit->upgrade(BWAPI::UpgradeTypes::Zerg_Missile_Attacks);
+
+                   if (unit->getType() == BWAPI::UnitTypes::Zerg_Evolution_Chamber)
+                       unit->upgrade(BWAPI::UpgradeTypes::Zerg_Carapace);
 
                    //ak mam zergling rush, urob upgrade utoku zerglingov
-                   if (Config::Strategy::StrategyName == "Zerg_ZerglingRush") 
-                       if (unit->getType() == BWAPI::UnitTypes::Zerg_Evolution_Chamber) 
-                           unit->upgrade(BWAPI::UpgradeTypes::Zerg_Melee_Attacks);
+                    if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Zergling) > 10)
+                        if(unit->getType() == BWAPI::UnitTypes::Zerg_Evolution_Chamber)
+                            unit->upgrade(BWAPI::UpgradeTypes::Zerg_Melee_Attacks);
                       
                }
 
@@ -322,9 +329,11 @@ BWAPI::Unit ProductionManager::getProducer(MetaType t, BWAPI::Position closestTo
                if(BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Protoss)
                    if (unit->getType() == BWAPI::UnitTypes::Protoss_Shuttle) {
                        for (auto& unit_1 : BWAPI::Broodwar->self()->getUnits()) {
-                           if (unit_1->getType() == BWAPI::UnitTypes::Protoss_Zealot ||
-                               unit_1->getType() == BWAPI::UnitTypes::Protoss_Dragoon)
+                           if (unit_1->getType() == BWAPI::UnitTypes::Protoss_Zealot)
                                unit->load(unit_1);
+                           else continue;
+
+                             //  unit->load(unit_1);
                        }
                    }
                    

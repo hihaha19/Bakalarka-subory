@@ -351,6 +351,35 @@ BWAPI::TilePosition BaseLocationManager::getNextExpansion(BWAPI::Player player) 
     return closestBase ? closestBase->getDepotPosition() : BWAPI::TilePosition(0, 0);
 }
 
+BWAPI::TilePosition BaseLocationManager::getStartPosition(BWAPI::Player player) const
+{
+    PROFILE_FUNCTION();
+
+    const BaseLocation* homeBase = getPlayerStartingBaseLocation(player);
+    const BaseLocation* closestBase = nullptr;
+    int minDistance = std::numeric_limits<int>::max();
+    
+    BWAPI::TilePosition homeTile(homeBase->getPosition());
+
+    for (auto& base : getBaseLocations())
+    {
+        // skip mineral only and starting locations (TODO: fix this)
+        if (base->isStartLocation() && base->isOccupiedByPlayer(BWAPI::Broodwar->self()))
+        {
+            BWAPI::TilePosition tile = base->getDepotPosition();
+            closestBase = base;
+            break;
+        }
+
+        // get the tile position of the base
+       
+            closestBase = base;
+
+    }
+
+    return closestBase ? closestBase->getDepotPosition() : BWAPI::TilePosition(0, 0);
+}
+
 BWAPI::TilePosition BaseLocationManager::getDefensePosition(BWAPI::Player player) const
 {
     PROFILE_FUNCTION();
@@ -359,29 +388,115 @@ BWAPI::TilePosition BaseLocationManager::getDefensePosition(BWAPI::Player player
     const BaseLocation* closestBase = nullptr;
     int minDistance = std::numeric_limits<int>::max();
     int i = 0;
-    int numBunkers = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker);
-    BWAPI::TilePosition homeTile(homeBase->getPosition());
-    for (auto& base : getBaseLocations())
-    {
-        // skip mineral only and starting locations (TODO: fix this)
-        if (base->isMineralOnly() || base->isStartLocation() ||
-            base->isOccupiedByPlayer(BWAPI::Broodwar->enemy()))
+    int numDefense = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker) +
+        UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Creep_Colony) +
+        UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Sunken_Colony) +
+        UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Photon_Cannon);
+
+    if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Terran) {
+
+        int cc = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center);
+        BWAPI::TilePosition homeTile(homeBase->getPosition());
+        for (auto& base : getBaseLocations())
         {
-            continue;
-        }
-        
+            // skip mineral only and starting locations (TODO: fix this)
+            if (base->isMineralOnly() || base->isStartLocation() ||
+                base->isOccupiedByPlayer(BWAPI::Broodwar->enemy()))
+            {
+                continue;
+            }
 
-        if (base->isOccupiedByPlayer(BWAPI::Broodwar->self()) && i == numBunkers) {
-            // get the tile position of the base
 
-            BWAPI::TilePosition tile = base->getDepotPosition();
-            closestBase = base;
-            break;
+            if (base->isOccupiedByPlayer(BWAPI::Broodwar->self()) && cc > 1) {
+                // get the tile position of the base
+
+                BWAPI::TilePosition tile = base->getDepotPosition();
+                closestBase = base;
+                break;
+            }
+            if (base->isOccupiedByPlayer(BWAPI::Broodwar->self()))
+                i++;
         }
-        if (base->isOccupiedByPlayer(BWAPI::Broodwar->self()))
-             i++;
     }
 
-    return closestBase ? closestBase->getDepotPosition() : BWAPI::TilePosition(0, 0);
+
+    else if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Zerg && Config::Strategy::StrategyName == "Zerg_2HatchHydra") {
+
+      //  printf("Num defense %d\n", numDefense);
+        int numCC = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hatchery)
+            + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair)
+            + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hive);
+
+        BWAPI::TilePosition homeTile(homeBase->getPosition());
+
+
+        for (auto& base : getBaseLocations())
+        {
+            if (numDefense == 0 && base->isStartLocation() &&
+                base->isOccupiedByPlayer(BWAPI::Broodwar->self()))
+            {
+                BWAPI::TilePosition tile = base->getDepotPosition();
+                closestBase = base;
+                break;
+            }
+
+            if (numDefense > 0 && numDefense < 6 && base->isOccupiedByPlayer(BWAPI::Broodwar->self()) && !base->isStartLocation()) {
+                BWAPI::TilePosition tile = base->getDepotPosition();
+                closestBase = base;
+                break;
+            }
+
+            if (numDefense >= 6 && i == numCC - 1 && base->isOccupiedByPlayer(BWAPI::Broodwar->self()) && !base->isStartLocation()) {
+                BWAPI::TilePosition tile = base->getDepotPosition();
+                closestBase = base;
+                break;
+            }
+
+
+            if (base->isMineralOnly() || base->isStartLocation() ||
+                base->isOccupiedByPlayer(BWAPI::Broodwar->enemy()))
+            {
+                continue;
+            }
+
+            i++;
+        }
+
+
+        return closestBase ? closestBase->getDepotPosition() : BWAPI::TilePosition(0, 0);
+    }
 }
 
+BWAPI::TilePosition BaseLocationManager::getHatcheryPosition(BWAPI::Player player) const {
+    int pocetOkupovanychLokacii = 0;
+    int numCC = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hatchery) + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair);
+    int frame = BWAPI::Broodwar->getFrameCount();
+    int minute = frame / (24 * 60);
+
+    for (auto& base : getBaseLocations())
+    {
+        if (base->isOccupiedByPlayer(BWAPI::Broodwar->self()))
+            pocetOkupovanychLokacii++;
+    }
+
+    printf("Pocet okupovanych %d\n", pocetOkupovanychLokacii);
+
+
+    
+
+    std::vector<int> expansionTimes = { 5, 10, 20, 30, 40 , 50 };
+    // pokial i < 6
+    for (size_t i(0); i < expansionTimes.size(); ++i)
+    {
+        if (numCC <= (i + 2)) {
+
+        }
+
+        if (numCC < (i + 2) && minute > expansionTimes[i])
+        {
+            printf("\nPresli %d minuty\n", i);
+        }
+    }
+
+   // return pocetOkupovanychLokacii;
+}

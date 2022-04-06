@@ -178,12 +178,13 @@ void BuildingManager::assignWorkersToUnassignedBuildings()
             if (b.type == BWAPI::UnitTypes::Terran_Bunker ||
                 b.type == BWAPI::UnitTypes::Protoss_Photon_Cannon ||
                 b.type == BWAPI::UnitTypes::Zerg_Creep_Colony) {
+                int numCC = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center);
                 int frame = BWAPI::Broodwar->getFrameCount();
                 int minute = frame / (24 * 60);
-                if (minute > 7) {
+                if (numCC != 1) {
                     auto tile = Global::Bases().getDefensePosition(BWAPI::Broodwar->self());
                     b.desiredPosition = tile;
-                    printf("Desired %d %d\n", b.desiredPosition.x, b.desiredPosition.y);
+              //      printf("Desired %d %d\n", b.desiredPosition.x, b.desiredPosition.y);
                 }
 
                 else {
@@ -202,13 +203,21 @@ void BuildingManager::assignWorkersToUnassignedBuildings()
                             //    BWAPI::Game::canBuildHere(b.finalPosition, b.type, b.builderUnit);
                         }
                     }
-                
-
             }
+            
+          /*  if (b.type == BWAPI::UnitTypes::Zerg_Hatchery) {
+                int numCC = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hatchery);
+                printf("Num cc %d\n", numCC);
+                auto startLocation = theMap.GetArea(BWAPI::Broodwar->self()->getStartLocation());
 
+                b.desiredPosition = getStartPosition;
+            }*/
 
-           
+          //  if (b.type == BWAPI::UnitTypes::Zerg_Hatchery)
+             //   printf("Desired %d %d\n", b.desiredPosition.x, b.desiredPosition.y);
+
             BWAPI::TilePosition testLocation = getBuildingLocation(b);
+           // printf("Test location %d %d\n", testLocation.x, testLocation.y);
 
             if (!testLocation.isValid())
             {
@@ -217,7 +226,8 @@ void BuildingManager::assignWorkersToUnassignedBuildings()
 
             b.finalPosition = testLocation;
             // ak chcem rucne zadat poziciu bunkru
-             
+            if (b.type == BWAPI::UnitTypes::Zerg_Hatchery)
+       //         printf("Final %d %d\n", b.finalPosition.x, b.finalPosition.y);
             
             // reserve this building's space
             m_buildingPlacer.reserveTiles(b.finalPosition,b.type.tileWidth(),b.type.tileHeight());
@@ -549,11 +559,23 @@ BWAPI::TilePosition BuildingManager::getBuildingLocation(const Building & b)
 
     if (b.type.isResourceDepot())
     {
+        int numHatchery = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hatchery)
+            + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair)
+            + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hive);
         // get the location 
-        printf("Nazov budovy %s\n", b.type.getName().c_str());
-		auto tile = Global::Bases().getNextExpansion(BWAPI::Broodwar->self());
-        printf("Tile x = %d, y = %d\n", tile.x, tile.y);
-        return tile;
+        printf("num hatchery %d\n", numHatchery);
+        if (numHatchery == 1 || numHatchery == 2 || numHatchery % 2 != 0) {
+            auto tile = Global::Bases().getNextExpansion(BWAPI::Broodwar->self());
+            return tile;
+        }
+	    	
+        else {
+            auto tile = Global::Bases().getStartPosition(BWAPI::Broodwar->self());
+            int distance = b.type == BWAPI::UnitTypes::Protoss_Photon_Cannon ? 0 : Config::Macro::BuildingSpacing;
+            return m_buildingPlacer.getBuildLocationNear(b, distance, false);
+        }
+        //printf("Tile x = %d, y = %d\n", tile.x, tile.y); 
+       // return tile;
     }
 
     // set the building padding specifically
