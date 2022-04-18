@@ -144,6 +144,8 @@ void MicroManager::regroup(const BWAPI::Position & regroupPosition) const
         }
         else
         {
+            if (unit->getType() == BWAPI::UnitTypes::Zerg_Overlord)
+                printf("Overlord\n");
             Micro::SmartAttackMove(unit, unit->getPosition());
         }
     }

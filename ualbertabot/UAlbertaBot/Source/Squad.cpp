@@ -183,7 +183,7 @@ void Squad::addUnitsToMicroManagers()
                 rangedUnits.insert(unit);
             }
             // select melee m_units
-            else if (unit->getType().groundWeapon().maxRange() <= 32)
+            else if (unit->getType().groundWeapon().maxRange() <= 32 || unit->getType() == BWAPI::UnitTypes::Zerg_Overlord)
             {
                 meleeUnits.insert(unit);
             }

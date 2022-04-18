@@ -440,29 +440,27 @@ BWAPI::TilePosition BaseLocationManager::getDefensePosition(BWAPI::Player player
                 break;
             }
 
-            if (numDefense > 0 && numDefense < 6 && base->isOccupiedByPlayer(BWAPI::Broodwar->self()) && !base->isStartLocation()) {
+            else if (base->isOccupiedByPlayer(BWAPI::Broodwar->self()) && !base->isStartLocation()) {
                 BWAPI::TilePosition tile = base->getDepotPosition();
-                closestBase = base;
-                break;
+
+
+                // the base's distance from our main nexus
+                int distanceFromHome = homeBase->getGroundDistance(tile);
+
+                // if it is not connected, continue
+                if (distanceFromHome < 0)
+                {
+                    continue;
+                }
+
+                if (!closestBase || distanceFromHome < minDistance)
+                {
+                    closestBase = base;
+                    minDistance = distanceFromHome;
+                }
             }
 
-            if (numDefense >= 6 && i == numCC - 1 && base->isOccupiedByPlayer(BWAPI::Broodwar->self()) && !base->isStartLocation()) {
-                BWAPI::TilePosition tile = base->getDepotPosition();
-                closestBase = base;
-                break;
-            }
-
-
-            if (base->isMineralOnly() || base->isStartLocation() ||
-                base->isOccupiedByPlayer(BWAPI::Broodwar->enemy()))
-            {
-                continue;
-            }
-
-            i++;
         }
-
-
         return closestBase ? closestBase->getDepotPosition() : BWAPI::TilePosition(0, 0);
     }
 }

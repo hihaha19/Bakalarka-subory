@@ -9,18 +9,18 @@ MeleeManager::MeleeManager()
 
 }
 
-void MeleeManager::executeMicro(const BWAPI::Unitset & targets)
+void MeleeManager::executeMicro(const BWAPI::Unitset& targets)
 {
     assignTargetsOld(targets);
 }
 
-void MeleeManager::assignTargetsOld(const BWAPI::Unitset & targets)
+void MeleeManager::assignTargetsOld(const BWAPI::Unitset& targets)
 {
-    const BWAPI::Unitset & meleeUnits = getUnits();
+    const BWAPI::Unitset& meleeUnits = getUnits();
 
     // figure out targets
     BWAPI::Unitset meleeUnitTargets;
-    for (auto & target : targets)
+    for (auto& target : targets)
     {
         // conditions for targeting
         if (!(target->getType().isFlyer()) &&
@@ -34,7 +34,7 @@ void MeleeManager::assignTargetsOld(const BWAPI::Unitset & targets)
     }
 
     // for each meleeUnit
-    for (auto & meleeUnit : meleeUnits)
+    for (auto& meleeUnit : meleeUnits)
     {
         // if the order is to attack or defend
         if (m_order.getType() == SquadOrderTypes::Attack || m_order.getType() == SquadOrderTypes::Defend)
@@ -75,12 +75,12 @@ void MeleeManager::assignTargetsOld(const BWAPI::Unitset & targets)
     }
 }
 
-std::pair<BWAPI::Unit, BWAPI::Unit> MeleeManager::findClosestUnitPair(const BWAPI::Unitset & attackers, const BWAPI::Unitset & targets)
+std::pair<BWAPI::Unit, BWAPI::Unit> MeleeManager::findClosestUnitPair(const BWAPI::Unitset& attackers, const BWAPI::Unitset& targets)
 {
     std::pair<BWAPI::Unit, BWAPI::Unit> closestPair(nullptr, nullptr);
     double closestDistance = std::numeric_limits<double>::max();
 
-    for (auto & attacker : attackers)
+    for (auto& attacker : attackers)
     {
         BWAPI::Unit target = getTarget(attacker, targets);
         double dist = attacker->getDistance(attacker);
@@ -97,14 +97,14 @@ std::pair<BWAPI::Unit, BWAPI::Unit> MeleeManager::findClosestUnitPair(const BWAP
 }
 
 // get a target for the meleeUnit to attack
-BWAPI::Unit MeleeManager::getTarget(BWAPI::Unit meleeUnit, const BWAPI::Unitset & targets)
+BWAPI::Unit MeleeManager::getTarget(BWAPI::Unit meleeUnit, const BWAPI::Unitset& targets)
 {
     int highPriority = 0;
     double closestDist = std::numeric_limits<double>::infinity();
     BWAPI::Unit closestTarget = nullptr;
 
     // for each target possiblity
-    for (auto & unit : targets)
+    for (auto& unit : targets)
     {
         int priority = getAttackPriority(meleeUnit, unit);
         int distance = meleeUnit->getDistance(unit);
@@ -139,13 +139,13 @@ int MeleeManager::getAttackPriority(BWAPI::Unit attacker, BWAPI::Unit unit)
     }
 
     // highest priority is something that can attack us or aid in combat
-    if (type ==  BWAPI::UnitTypes::Terran_Bunker)
+    if (type == BWAPI::UnitTypes::Terran_Bunker)
     {
         return 11;
     }
     else if (type == BWAPI::UnitTypes::Terran_Medic ||
         (type.groundWeapon() != BWAPI::WeaponTypes::None && !type.isWorker()) ||
-        type ==  BWAPI::UnitTypes::Terran_Bunker ||
+        type == BWAPI::UnitTypes::Terran_Bunker ||
         type == BWAPI::UnitTypes::Protoss_High_Templar ||
         type == BWAPI::UnitTypes::Protoss_Reaver ||
         (type.isWorker() && unitNearChokepoint(unit)))
@@ -183,12 +183,12 @@ int MeleeManager::getAttackPriority(BWAPI::Unit attacker, BWAPI::Unit unit)
     }
 }
 
-BWAPI::Unit MeleeManager::closestMeleeUnit(BWAPI::Unit target, const BWAPI::Unitset & meleeUnitsToAssign)
+BWAPI::Unit MeleeManager::closestMeleeUnit(BWAPI::Unit target, const BWAPI::Unitset& meleeUnitsToAssign)
 {
     double minDistance = 0;
     BWAPI::Unit closest = nullptr;
 
-    for (auto & meleeUnit : meleeUnitsToAssign)
+    for (auto& meleeUnit : meleeUnitsToAssign)
     {
         double distance = meleeUnit->getDistance(target);
         if (!closest || distance < minDistance)
@@ -201,9 +201,21 @@ BWAPI::Unit MeleeManager::closestMeleeUnit(BWAPI::Unit target, const BWAPI::Unit
     return closest;
 }
 
-bool MeleeManager::meleeUnitShouldRetreat(BWAPI::Unit meleeUnit, const BWAPI::Unitset & targets)
+bool MeleeManager::meleeUnitShouldRetreat(BWAPI::Unit meleeUnit, const BWAPI::Unitset& targets)
 {
-    // terran don't regen so it doesn't make any sense to retreat
+
+    /* if (meleeUnit->getType() == BWAPI::UnitTypes::Zerg_Overlord) {
+       int numHydralisk =  UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk);
+       int numZergling = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Zergling);
+
+       if (numHydralisk == 0 && numZergling == 0)
+           return true;
+       else
+           return false;
+   }*/
+
+
+   // terran don't regen so it doesn't make any sense to retreat
     if (meleeUnit->getType().getRace() == BWAPI::Races::Terran)
     {
         return false;
@@ -222,10 +234,11 @@ bool MeleeManager::meleeUnitShouldRetreat(BWAPI::Unit meleeUnit, const BWAPI::Un
     }
 
     // if there is a ranged enemy unit within attack range of this melee unit then we shouldn't bother retreating since it could fire and kill it anyway
-    for (auto & unit : targets)
+    for (auto& unit : targets)
     {
         int groundWeaponRange = unit->getType().groundWeapon().maxRange();
         if (groundWeaponRange >= 64 && unit->getDistance(meleeUnit) < groundWeaponRange)
+            //&& meleeUnit->getType() != BWAPI::UnitTypes::Zerg_Overlord)
         {
             return false;
         }
@@ -238,13 +251,13 @@ bool MeleeManager::meleeUnitShouldRetreat(BWAPI::Unit meleeUnit, const BWAPI::Un
 
 
 // still has bug in it somewhere, use Old version
-void MeleeManager::assignTargetsNew(const BWAPI::Unitset & targets)
+void MeleeManager::assignTargetsNew(const BWAPI::Unitset& targets)
 {
-    const BWAPI::Unitset & meleeUnits = getUnits();
+    const BWAPI::Unitset& meleeUnits = getUnits();
 
     // figure out targets
     BWAPI::Unitset meleeUnitTargets;
-    for (auto & target : targets)
+    for (auto& target : targets)
     {
         // conditions for targeting
         if (!(target->getType().isFlyer()) &&
@@ -260,7 +273,7 @@ void MeleeManager::assignTargetsNew(const BWAPI::Unitset & targets)
     BWAPI::Unitset meleeUnitsToAssign(meleeUnits);
     std::map<BWAPI::Unit, int> attackersAssigned;
 
-    for (auto & unit : meleeUnitTargets)
+    for (auto& unit : meleeUnitTargets)
     {
         attackersAssigned[unit] = 0;
     }
@@ -272,8 +285,8 @@ void MeleeManager::assignTargetsNew(const BWAPI::Unitset & targets)
     while (!meleeUnitsToAssign.empty() && !meleeUnitTargets.empty())
     {
         auto attackerAssignment = findClosestUnitPair(meleeUnitsToAssign, meleeUnitTargets);
-        BWAPI::Unit & attacker = attackerAssignment.first;
-        BWAPI::Unit & target = attackerAssignment.second;
+        BWAPI::Unit& attacker = attackerAssignment.first;
+        BWAPI::Unit& target = attackerAssignment.second;
 
         UAB_ASSERT_WARNING(attacker, "We should have chosen an attacker!");
 
@@ -291,7 +304,7 @@ void MeleeManager::assignTargetsNew(const BWAPI::Unitset & targets)
         Micro::SmartAttackUnit(attacker, target);
 
         // update the number of units assigned to attack the target we found
-        int & assigned = attackersAssigned[attackerAssignment.second];
+        int& assigned = attackersAssigned[attackerAssignment.second];
         assigned++;
 
         // if it's a small / fast unit and there's more than 2 things attacking it already, don't assign more
@@ -311,7 +324,7 @@ void MeleeManager::assignTargetsNew(const BWAPI::Unitset & targets)
     // if there's no targets left, attack move to the order destination
     if (meleeUnitTargets.empty())
     {
-        for (auto & unit : meleeUnitsToAssign)
+        for (auto& unit : meleeUnitsToAssign)
         {
             if (unit->getDistance(m_order.getPosition()) > 100)
             {

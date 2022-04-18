@@ -45,6 +45,11 @@ void ProductionManager::performBuildOrderSearch()
     // predchadzajuci build order?
     BuildOrder& buildOrder = m_bossManager.getBuildOrder();
 
+    /*if (BWAPI::Broodwar->self()->supplyUsed() > BWAPI::Broodwar->self()->supplyTotal()) {
+        m_bossManager.reset();
+        m_bossManager.startNewSearch(Global::Strategy().getBuildOrderGoal());
+    }*/
+
     if (buildOrder.size() > 0)
     {
         setBuildOrder(buildOrder);
@@ -67,7 +72,10 @@ void ProductionManager::update()
 
     // 30 ms per search update
     m_bossManager.update(Config::Macro::BOSSTimePerFrame);
-
+    if (BWAPI::Broodwar->self()->supplyUsed() >= BWAPI::Broodwar->self()->supplyTotal()) {
+    //    m_bossManager.reset();
+        m_bossManager.startNewSearch(Global::Strategy().getBuildOrderGoal());
+    }
     // check the _queue for stuff we can build
     manageBuildOrderQueue();
 
@@ -93,7 +101,7 @@ void ProductionManager::update()
 
     // we have too little supply to build a unit
     // detect if there's a build order deadlock once per second
-    if ((BWAPI::Broodwar->getFrameCount() % 24 == 0) && detectBuildOrderDeadlock())
+    if (((BWAPI::Broodwar->getFrameCount() % 24 == 0) && detectBuildOrderDeadlock()))
     {
         if (Config::Debug::DrawBuildOrderSearchInfo)
         {
@@ -102,6 +110,70 @@ void ProductionManager::update()
         m_queue.queueAsHighestPriority(MetaType(BWAPI::Broodwar->self()->getRace().getSupplyProvider()), true);
     }
 
+    if((BWAPI::Broodwar->getFrameCount() % 240 == 0) && (BWAPI::Broodwar->self()->supplyUsed() > BWAPI::Broodwar->self()->supplyTotal()))
+    {
+        printf("used %d total %d\n", BWAPI::Broodwar->self()->supplyUsed(), BWAPI::Broodwar->self()->supplyTotal());
+        if (Config::Debug::DrawBuildOrderSearchInfo)
+        {
+            BWAPI::Broodwar->printf("Supply deadlock detected, building supply!");
+        }
+        m_queue.queueAsHighestPriority(MetaType(BWAPI::Broodwar->self()->getRace().getSupplyProvider()), true);
+    }
+
+    if ((BWAPI::Broodwar->getFrameCount() % 240 == 0) && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Drone) == 0)
+    {
+        if (Config::Debug::DrawBuildOrderSearchInfo)
+        {
+            BWAPI::Broodwar->printf("malo dronov!");
+        }
+        m_queue.queueAsHighestPriority(MetaType(BWAPI::Broodwar->self()->getRace().getWorker()), true);
+    }
+
+    // pridat rafineriu
+    
+    if (BWAPI::Broodwar->getFrameCount() > 7200 && (BWAPI::Broodwar->getFrameCount() % 120 == 0) && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk) == 0 &&
+        UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk_Den) > 0)
+    {
+        if (Config::Debug::DrawBuildOrderSearchInfo)
+        {
+            BWAPI::Broodwar->printf("malo hydier!");
+        }
+        m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Zerg_Hydralisk), true);
+    }
+
+
+    /*if (Config::Strategy::StrategyName == "Zerg_2HatchHydra") {
+        if (BWAPI::Broodwar->getFrameCount() > 5800 && BWAPI::Broodwar->getFrameCount() % 240 == 0 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk_Den) == 0 &&
+            UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Extractor) > 0 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Drone) > 0)
+        {
+            if (Config::Debug::DrawBuildOrderSearchInfo)
+            {
+                BWAPI::Broodwar->printf("nemam hydralisk den!");
+            }
+            m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Zerg_Hydralisk_Den), true);
+        }
+
+        if (BWAPI::Broodwar->getFrameCount() > 3000 && BWAPI::Broodwar->getFrameCount() % 240 == 0 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Extractor) == 0 &&
+            UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Drone) > 0) {
+            if (Config::Debug::DrawBuildOrderSearchInfo)
+            {
+                BWAPI::Broodwar->printf("nemam extractor");
+            }
+            m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Zerg_Extractor), true);
+        }
+        
+     //   if ((BWAPI::Broodwar->getFrameCount() % 24 == 0) && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spawning_Pool) > 0) {
+            //  m_queue.skipItem(MetaType(BWAPI::UnitTypes::Zerg_Extractor));
+          //    printf("QUeue %s\n", (m_queue.getHighestPriorityItem()).toString().c_str());
+           // if((BWAPI::UnitTypes*)m_queue.getHighestPriorityItem() == BWAPI::UnitTypes::Zerg_Spawning_Pool)
+
+     //   }
+
+
+
+        
+    }*/
+    
 
 
     // pridane na lurkera
@@ -282,10 +354,15 @@ BWAPI::Unit ProductionManager::getProducer(MetaType t, BWAPI::Position closestTo
 
 
                if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Zerg) {
-                   if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair) == 0)
+                   if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair) == 0 && BWAPI::Broodwar->self()->minerals() > 300 &&
+                       UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Evolution_Chamber > 0))
                        if (unit->getType() == BWAPI::UnitTypes::Zerg_Hatchery) 
                            unit->morph(BWAPI::UnitTypes::Zerg_Lair);
                        
+                   if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hive) == 0 && BWAPI::Broodwar->self()->minerals() > 2000 &&
+                       UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Queens_Nest) > 0)
+                       if (unit->getType() == BWAPI::UnitTypes::Zerg_Lair)
+                           unit->morph(BWAPI::UnitTypes::Zerg_Hive);
                    
                    if (unit->getType() == BWAPI::UnitTypes::Zerg_Creep_Colony) 
                      unit->morph(BWAPI::UnitTypes::Zerg_Sunken_Colony);
@@ -296,6 +373,9 @@ BWAPI::Unit ProductionManager::getProducer(MetaType t, BWAPI::Position closestTo
                        unit->upgrade(BWAPI::UpgradeTypes::Pneumatized_Carapace);
                    }
                        
+                   if (unit->getType() == BWAPI::UnitTypes::Zerg_Spire) {
+                       unit->upgrade(BWAPI::UpgradeTypes::Zerg_Flyer_Carapace);
+                   }
                    
                    if (unit->getType() == BWAPI::UnitTypes::Zerg_Evolution_Chamber)
                        unit->upgrade(BWAPI::UpgradeTypes::Zerg_Missile_Attacks);
@@ -303,7 +383,7 @@ BWAPI::Unit ProductionManager::getProducer(MetaType t, BWAPI::Position closestTo
                    if (unit->getType() == BWAPI::UnitTypes::Zerg_Evolution_Chamber)
                        unit->upgrade(BWAPI::UpgradeTypes::Zerg_Carapace);
 
-                   //ak mam zergling rush, urob upgrade utoku zerglingov
+                   //ak mam > 10 zerglingov, urob upgrade utoku zerglingov
                     if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Zergling) > 10)
                         if(unit->getType() == BWAPI::UnitTypes::Zerg_Evolution_Chamber)
                             unit->upgrade(BWAPI::UpgradeTypes::Zerg_Melee_Attacks);

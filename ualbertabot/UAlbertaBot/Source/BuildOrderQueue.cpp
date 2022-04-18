@@ -84,7 +84,7 @@ void BuildOrderQueue::queueItem(BuildOrderItem b)
     {
         // sort the list in ascending order, putting highest priority at the top
         std::sort(queue.begin(), queue.end());
-    }
+    } 
 
     // update the highest or lowest if it is beaten
     highestPriority = (b.priority > highestPriority) ? b.priority : highestPriority;
