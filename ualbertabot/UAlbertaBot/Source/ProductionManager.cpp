@@ -142,7 +142,7 @@ void ProductionManager::update()
     }
 
 
-    /*if (Config::Strategy::StrategyName == "Zerg_2HatchHydra") {
+    if (Config::Strategy::StrategyName == "Zerg_2HatchHydra") {
         if (BWAPI::Broodwar->getFrameCount() > 5800 && BWAPI::Broodwar->getFrameCount() % 240 == 0 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk_Den) == 0 &&
             UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Extractor) > 0 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Drone) > 0)
         {
@@ -152,6 +152,7 @@ void ProductionManager::update()
             }
             m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Zerg_Hydralisk_Den), true);
         }
+    
 
         if (BWAPI::Broodwar->getFrameCount() > 3000 && BWAPI::Broodwar->getFrameCount() % 240 == 0 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Extractor) == 0 &&
             UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Drone) > 0) {
@@ -167,12 +168,8 @@ void ProductionManager::update()
           //    printf("QUeue %s\n", (m_queue.getHighestPriorityItem()).toString().c_str());
            // if((BWAPI::UnitTypes*)m_queue.getHighestPriorityItem() == BWAPI::UnitTypes::Zerg_Spawning_Pool)
 
-     //   }
-
-
-
-        
-    }*/
+     //   }  
+    }
     
 
 
@@ -293,6 +290,19 @@ void ProductionManager::manageBuildOrderQueue()
             m_queue.removeCurrentHighestPriorityItem();
             break;
         }
+
+
+
+        if (currentItem.metaType.getName() == "Zerg_Spawning_Pool") {
+            if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spawning_Pool) > 0) {
+                m_queue.removeCurrentHighestPriorityItem();
+                break;
+            }
+                
+        }
+
+
+
 
         // if the next item in the list is a building and we can't yet make it
         if (currentItem.metaType.isBuilding() && !(producer && canMake) && currentItem.metaType.whatBuilds().isWorker())
