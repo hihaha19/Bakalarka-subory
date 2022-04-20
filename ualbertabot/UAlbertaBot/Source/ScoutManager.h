@@ -22,6 +22,13 @@ class ScoutManager
     void gasSteal();
     void fleeScout();
     void moveScouts();
+    void followPerimeter(int clockwise);
+    void followPerimeter(BWAPI::Position to, BWAPI::Position from);
+    std::pair<int, int> findSafePath(BWAPI::Position to, BWAPI::Position from);
+    int getClosestVertexIndex(BWAPI::UnitInterface* unit);
+    int getClosestVertexIndex(BWAPI::Position p);
+    void setFrom(BWAPI::Position from);
+    void setTo(BWAPI::Position to);
     void drawScoutInformation(int x, int y);
     BWAPI::Position	getFleePosition();
     BWAPI::Unit		getEnemyGeyser();
