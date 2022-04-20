@@ -130,7 +130,7 @@ void ProductionManager::update()
     }
 
     // pridat rafineriu
-    
+    /*
     if (BWAPI::Broodwar->getFrameCount() > 7200 && (BWAPI::Broodwar->getFrameCount() % 120 == 0) && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk) == 0 &&
         UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk_Den) > 0)
     {
@@ -169,7 +169,7 @@ void ProductionManager::update()
            // if((BWAPI::UnitTypes*)m_queue.getHighestPriorityItem() == BWAPI::UnitTypes::Zerg_Spawning_Pool)
 
      //   }  
-    }
+    }*/
     
 
 
@@ -298,7 +298,6 @@ void ProductionManager::manageBuildOrderQueue()
                 m_queue.removeCurrentHighestPriorityItem();
                 break;
             }
-                
         }
 
 

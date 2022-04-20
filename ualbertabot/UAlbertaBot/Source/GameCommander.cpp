@@ -139,13 +139,14 @@ void GameCommander::setValidUnits()
 	}
 }
 
+
 void GameCommander::setScoutUnits()
 {
     // if we haven't set a scout unit, do it
     if (m_scoutUnits.empty() && !m_initialScoutSet)
     {
-        BWAPI::Unit supplyProvider = getFirstSupplyProvider();
-
+      /*  BWAPI::Unit supplyProvider = getFirstSupplyProvider();
+	
 		// if it exists
 		if (supplyProvider)
 		{
@@ -159,9 +160,24 @@ void GameCommander::setScoutUnits()
 				assignUnit(workerScout, m_scoutUnits);
                 m_initialScoutSet = true;
 			}
+		}*/
+
+		for (auto& unit : BWAPI::Broodwar->self()->getUnits()) {
+			if (unit->getType() == BWAPI::UnitTypes::Zerg_Overlord) {
+				BWAPI::Unit overLord = unit;
+				if (overLord)
+				{
+					Global::Scout().setWorkerScout(overLord);
+					assignUnit(overLord, m_scoutUnits);
+					m_initialScoutSet = true;
+				}
+				break;
+			}		
 		}
+
     }
 }
+
 
 // sets combat units to be passed to CombatCommander
 void GameCommander::setCombatUnits()

@@ -442,25 +442,29 @@ const MetaPairVector StrategyManager::getZergBuildOrderGoal() const
 
     else if (Config::Strategy::StrategyName == "Zerg_2HatchHydra")
     {
-        goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Hydralisk, numHydras + 15));
-     //   goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Grooved_Spines, 1));
-       // printf("Drones %d\n", numDrones);
-        if (numHydras > 20) {
-            goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Drone, numDrones + 4));
-        }
-         
-        if(UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spire) > 0)
-            goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Mutalisk, 4));
-        
+        int frame = BWAPI::Broodwar->getFrameCount();
+        int minute = frame / (24 * 60);
+
+      //  if (minute <= 25) {
+            goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Hydralisk, numHydras + 15));
+            //   goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Grooved_Spines, 1));
+              // printf("Drones %d\n", numDrones);
+            if (numHydras > 20) {
+                goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Drone, numDrones + 4));
+            }
+
+            if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spire) > 0)
+                goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Mutalisk, 10));
+
             if (BWAPI::Broodwar->self()->minerals() > 400 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk_Den > 0))
                 goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Muscular_Augments, 1));
 
             if (numDrones == 0) {
                 goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Drone, numDrones + 6));
             }
-                
 
-            // co najviac hatchery a hydier, minanie zdrojov zabepecit hatchery
+
+            // co najviac hatchery a hydier, minanie zdrojov zabezpecit hatchery
             if (BWAPI::Broodwar->self()->minerals() > 600)
                 goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Hatchery, numCC + 1));
 
@@ -485,17 +489,15 @@ const MetaPairVector StrategyManager::getZergBuildOrderGoal() const
             if (numEvolutionChamber == 1)
                 goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Evolution_Chamber, numEvolutionChamber + 1));
 
-            if(numEvolutionChamber != 0 && BWAPI::Broodwar->self()->minerals() > 500)
+            if (numEvolutionChamber != 0 && BWAPI::Broodwar->self()->minerals() > 500)
                 goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Lair, 1));
 
             if (BWAPI::Broodwar->self()->minerals() > 400) {
                 goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Creep_Colony, numCreep + 1));
                 //  printf("Stavaj sunken\n");
             }
-
-     //   }
-       
-    }
+        }       
+  //  }
 
     else if (Config::Strategy::StrategyName == "Zerg_3HatchMuta")
     {

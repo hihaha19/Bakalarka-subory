@@ -54,11 +54,12 @@ void ScoutManager::moveScouts()
 {
     if (!m_workerScout || !m_workerScout->exists() || !(m_workerScout->getHitPoints() > 0))
     {
+
         return;
     }
 
     const int scoutHP = m_workerScout->getHitPoints() + m_workerScout->getShields();
-
+     
     gasSteal();
 
     // get the enemy base location, if we have one
@@ -82,7 +83,8 @@ void ScoutManager::moveScouts()
     {
         m_gasStealFinished = true;
     }
-
+    BWAPI::Broodwar->mapWidth();
+    BWAPI::Broodwar->mapHeight();
     // for each start location in the level
     if (!enemyBaseLocation)
     {

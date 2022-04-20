@@ -186,6 +186,18 @@ int RangedManager::getAttackPriority(BWAPI::Unit rangedUnit, BWAPI::Unit target)
         return 90;
     }
 
+    // nove
+    if (targetType == BWAPI::UnitTypes::Protoss_Dark_Templar)
+    {
+        return 0;
+    }
+
+    if (targetType == BWAPI::UnitTypes::Protoss_Reaver)
+    {
+        return 200;
+    }
+
+
     // highest priority is something that can attack us or aid in combat
     if (targetType ==  BWAPI::UnitTypes::Terran_Bunker || isThreat)
     {
