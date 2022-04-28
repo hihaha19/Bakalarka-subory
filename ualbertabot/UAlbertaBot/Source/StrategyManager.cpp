@@ -445,7 +445,7 @@ const MetaPairVector StrategyManager::getZergBuildOrderGoal() const
         int frame = BWAPI::Broodwar->getFrameCount();
         int minute = frame / (24 * 60);
 
-      //  if (minute <= 25) {
+
             goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Hydralisk, numHydras + 15));
             //   goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Grooved_Spines, 1));
               // printf("Drones %d\n", numDrones);
@@ -465,8 +465,8 @@ const MetaPairVector StrategyManager::getZergBuildOrderGoal() const
 
 
             // co najviac hatchery a hydier, minanie zdrojov zabezpecit hatchery
-            if (BWAPI::Broodwar->self()->minerals() > 600)
-                goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Hatchery, numCC + 1));
+          //  if (BWAPI::Broodwar->self()->minerals() > 4000)
+            //    goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Hatchery, numCC + 1));
 
             if (BWAPI::Broodwar->self()->minerals() > 200)
                 goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Spire, 1));
@@ -522,7 +522,7 @@ const MetaPairVector StrategyManager::getZergBuildOrderGoal() const
         printf("Expandujem\n");
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Hatchery, numCC + 1));
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Drone, numWorkers + 10));
-        goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Extractor, numExtractor + 1));
+        goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Extractor, numCC+1));
     }
 
  //   if (shouldBuildNow()) { 
