@@ -153,7 +153,7 @@ void CombatCommander::updateDropSquads()
         for (auto & unit : m_combatUnits)
         {
             // if this is a transport unit and we don't have one in the squad yet, add it
-            if (!dropSquadHasTransport && (unit->getType().spaceProvided() > 0 && unit->isFlying()))
+            if ((!dropSquadHasTransport && (unit->getType().spaceProvided() > 0 && unit->isFlying())) || unit->getType() == BWAPI::UnitTypes::Zerg_Overlord)
             {
                 m_squadData.assignUnitToSquad(unit, dropSquad);
                 dropSquadHasTransport = true;
@@ -493,6 +493,7 @@ BWAPI::Position CombatCommander::getMainAttackLocation()
         bool onlyOverlords = true;
         for (auto & unit : enemyUnitsInArea)
         {
+       //     printf("Jednotka %s\n", unit->getType().toString().c_str());
             if (unit->getType() != BWAPI::UnitTypes::Zerg_Overlord)
             {
                 onlyOverlords = false;
@@ -512,9 +513,13 @@ BWAPI::Position CombatCommander::getMainAttackLocation()
     for (const auto & kv : Global::Info().getUnitInfo(BWAPI::Broodwar->enemy()))
     {
         const UnitInfo & ui = kv.second;
+  //      printf("Kv second %d\n", kv.second);
 
-        if (ui.type.isBuilding() && ui.lastPosition != BWAPI::Positions::None)
+        if (ui.type.isBuilding() && ui.lastPosition != BWAPI::Positions::None && ui.lastHealth != 0)
         {
+      //      printf("Last position %d %d\n", ui.lastPosition);
+         //   printf("Type %s\n", ui.type.toString().c_str());
+      //      printf("Last position %d\n", ui.lastPosition.toString().c_str());
             return ui.lastPosition;
         }
     }

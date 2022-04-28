@@ -180,6 +180,7 @@ void BuildingManager::assignWorkersToUnassignedBuildings()
                 b.type == BWAPI::UnitTypes::Zerg_Creep_Colony) {
                 int sunken_a_creep = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Sunken_Colony) + 
                     UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Creep_Colony);
+                int numSpore = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spore_Colony);
                 int numCC = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center);
                 int frame = BWAPI::Broodwar->getFrameCount();
                 int minute = frame / (24 * 60);
@@ -200,7 +201,7 @@ void BuildingManager::assignWorkersToUnassignedBuildings()
                     for (auto& choke : chokePoints)
                     {
                         b.desiredPosition = (BWAPI::TilePosition)choke->Center();
-                        printf("Choke pointy X %d Y %d\n", b.desiredPosition);
+                      //  printf("Choke pointy X %d Y %d\n", b.desiredPosition);
                         //    b.finalPosition.x = b.finalPosition.x - 10;
                         //    BWAPI::Game::canBuildHere(b.finalPosition, b.type, b.builderUnit);
                     }
@@ -581,7 +582,6 @@ BWAPI::TilePosition BuildingManager::getBuildingLocation(const Building & b)
             + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair)
             + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hive);
         // get the location 
-        printf("num hatchery %d\n", numHatchery);
         if (numHatchery < 5) {
             auto tile = Global::Bases().getNextExpansion(BWAPI::Broodwar->self());
             return tile;

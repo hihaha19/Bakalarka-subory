@@ -106,6 +106,7 @@ namespace Config
         extern int BOSSFrameLimit;
         extern int BOSSTimePerFrame;
         extern int WorkersPerRefinery;
+        extern int WorkersPerRefineryNoSpire;
         extern int BuildingSpacing;
         extern int PylonSpacing;
     }

@@ -120,25 +120,29 @@ void ProductionManager::update()
         m_queue.queueAsHighestPriority(MetaType(BWAPI::Broodwar->self()->getRace().getSupplyProvider()), true);
     }
 
-    if ((BWAPI::Broodwar->getFrameCount() % 240 == 0) && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Drone) == 0)
-    {
-        if (Config::Debug::DrawBuildOrderSearchInfo)
-        {
-            BWAPI::Broodwar->printf("malo dronov!");
-        }
-        m_queue.queueAsHighestPriority(MetaType(BWAPI::Broodwar->self()->getRace().getWorker()), true);
-    }
 
-    // pridat rafineriu
-    /*
-    if (BWAPI::Broodwar->getFrameCount() > 7200 && (BWAPI::Broodwar->getFrameCount() % 120 == 0) && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk) == 0 &&
-        UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk_Den) > 0)
-    {
-        if (Config::Debug::DrawBuildOrderSearchInfo)
+
+    if (Config::Strategy::StrategyName == "Zerg_2HatchHydra") {
+        if ((BWAPI::Broodwar->getFrameCount() % 240 == 0) && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Drone) == 0)
         {
-            BWAPI::Broodwar->printf("malo hydier!");
+            if (Config::Debug::DrawBuildOrderSearchInfo)
+            {
+                BWAPI::Broodwar->printf("malo dronov!");
+            }
+            m_queue.queueAsHighestPriority(MetaType(BWAPI::Broodwar->self()->getRace().getWorker()), true);
         }
-        m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Zerg_Hydralisk), true);
+
+        // pridat rafineriu
+
+        if (BWAPI::Broodwar->getFrameCount() > 7200 && (BWAPI::Broodwar->getFrameCount() % 120 == 0) && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk) == 0 &&
+            UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk_Den) > 0)
+        {
+            if (Config::Debug::DrawBuildOrderSearchInfo)
+            {
+                BWAPI::Broodwar->printf("malo hydier!");
+            }
+            m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Zerg_Hydralisk), true);
+        }
     }
 
 
@@ -152,9 +156,21 @@ void ProductionManager::update()
             }
             m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Zerg_Hydralisk_Den), true);
         }
+
+        if (BWAPI::Broodwar->getFrameCount() > 5800 && BWAPI::Broodwar->getFrameCount() % 480 == 0 && 
+            (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hatchery) + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair)
+                + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hive)) < 2 &&
+            UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Drone) > 0)
+        {
+            if (Config::Debug::DrawBuildOrderSearchInfo)
+            {
+                BWAPI::Broodwar->printf("nemam 2x hatchery");
+            }
+            m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Zerg_Hatchery), true);
+        }
     
 
-        if (BWAPI::Broodwar->getFrameCount() > 3000 && BWAPI::Broodwar->getFrameCount() % 240 == 0 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Extractor) == 0 &&
+        if (BWAPI::Broodwar->getFrameCount() > 5000 && BWAPI::Broodwar->getFrameCount() % 240 == 0 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Extractor) == 0 &&
             UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Drone) > 0) {
             if (Config::Debug::DrawBuildOrderSearchInfo)
             {
@@ -163,13 +179,7 @@ void ProductionManager::update()
             m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Zerg_Extractor), true);
         }
         
-     //   if ((BWAPI::Broodwar->getFrameCount() % 24 == 0) && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spawning_Pool) > 0) {
-            //  m_queue.skipItem(MetaType(BWAPI::UnitTypes::Zerg_Extractor));
-          //    printf("QUeue %s\n", (m_queue.getHighestPriorityItem()).toString().c_str());
-           // if((BWAPI::UnitTypes*)m_queue.getHighestPriorityItem() == BWAPI::UnitTypes::Zerg_Spawning_Pool)
-
-     //   }  
-    }*/
+    }
     
 
 
@@ -272,6 +282,7 @@ void ProductionManager::manageBuildOrderQueue()
         return;
     }
 
+
     // the current item to be used
     BuildOrderItem& currentItem = m_queue.getHighestPriorityItem();
 
@@ -283,13 +294,14 @@ void ProductionManager::manageBuildOrderQueue()
 
         // check to see if we can make it right now
         bool canMake = canMakeNow(producer, currentItem.metaType);
-
+    //    printf("Can make %d\n", canMake);
         // if we try to build too many refineries manually remove it
-        if (currentItem.metaType.isRefinery() && (BWAPI::Broodwar->self()->allUnitCount(BWAPI::Broodwar->self()->getRace().getRefinery() >= 3)))
+      
+        /*if (currentItem.metaType.isRefinery() && (BWAPI::Broodwar->self()->allUnitCount(BWAPI::Broodwar->self()->getRace().getRefinery() >= 3)))
         {
             m_queue.removeCurrentHighestPriorityItem();
             break;
-        }
+        }*/
 
 
 
@@ -299,6 +311,28 @@ void ProductionManager::manageBuildOrderQueue()
                 break;
             }
         }
+
+        if (currentItem.metaType.getName() == "Zerg_Lair") {
+            if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair) > 0) {
+                m_queue.removeCurrentHighestPriorityItem();
+                break;
+            }
+        }
+
+        if (currentItem.metaType.getName() == "Zerg_Spire") {
+            if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spire) > 1) {
+                m_queue.removeCurrentHighestPriorityItem();
+                break;
+            }
+        }
+
+        if (currentItem.metaType.getName() == "Zerg_Evolution_Chamber") {
+            if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Evolution_Chamber) > 1) {
+                m_queue.removeCurrentHighestPriorityItem();
+                break;
+            }
+        }
+        
 
 
 
@@ -372,18 +406,21 @@ BWAPI::Unit ProductionManager::getProducer(MetaType t, BWAPI::Position closestTo
                        UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Queens_Nest) > 0)
                        if (unit->getType() == BWAPI::UnitTypes::Zerg_Lair)
                            unit->morph(BWAPI::UnitTypes::Zerg_Hive);
+
+                   if (unit->getType() == BWAPI::UnitTypes::Zerg_Creep_Colony && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spore_Colony) < 2)
+                       unit->morph(BWAPI::UnitTypes::Zerg_Spore_Colony);
                    
                    if (unit->getType() == BWAPI::UnitTypes::Zerg_Creep_Colony) 
                      unit->morph(BWAPI::UnitTypes::Zerg_Sunken_Colony);
-               
-                   
 
+                   
                    if (unit->getType() == BWAPI::UnitTypes::Zerg_Lair) {
-                       unit->upgrade(BWAPI::UpgradeTypes::Pneumatized_Carapace);
-                   }
+                       unit->upgrade(BWAPI::UpgradeTypes::Pneumatized_Carapace); }
+                   
                        
-                   if (unit->getType() == BWAPI::UnitTypes::Zerg_Spire) {
+                   if (unit->getType() == BWAPI::UnitTypes::Zerg_Spire && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Mutalisk) > 5) {
                        unit->upgrade(BWAPI::UpgradeTypes::Zerg_Flyer_Carapace);
+                       unit->upgrade(BWAPI::UpgradeTypes::Zerg_Flyer_Attacks);
                    }
                    
                    if (unit->getType() == BWAPI::UnitTypes::Zerg_Evolution_Chamber)

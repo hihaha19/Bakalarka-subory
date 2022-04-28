@@ -7,7 +7,6 @@
 #include "Micro.h"
 #include "WorkerManager.h"
 #include "MapTools.h"
-#include <TransportManager.h>
 
 using namespace UAlbertaBot;
 
@@ -50,201 +49,126 @@ void ScoutManager::drawScoutInformation(int x, int y)
     BWAPI::Broodwar->drawTextScreen(x, y, "ScoutInfo: %s", m_scoutStatus.c_str());
     BWAPI::Broodwar->drawTextScreen(x, y+10, "GasSteal: %s", m_gasStealStatus.c_str());
 }
+
 void ScoutManager::moveScouts()
 {
     if (!m_workerScout || !m_workerScout->exists() || !(m_workerScout->getHitPoints() > 0))
     {
+
         return;
     }
 
-    // If I didn't finish unloading the troops, wait
-    BWAPI::UnitCommand currentCommand(m_workerScout->getLastCommand());
-    if ((currentCommand.getType() == BWAPI::UnitCommandTypes::Unload_All
-        || currentCommand.getType() == BWAPI::UnitCommandTypes::Unload_All_Position)
-        && m_workerScout->getLoadedUnits().size() > 0)
+    const int scoutHP = m_workerScout->getHitPoints() + m_workerScout->getShields();
+     
+    gasSteal();
+
+    // get the enemy base location, if we have one
+    const BaseLocation * enemyBaseLocation = Global::Bases().getPlayerStartingBaseLocation(BWAPI::Broodwar->enemy());
+
+    const int scoutDistanceThreshold = 30;
+
+    if (m_workerScout->isCarryingGas())
+    {
+        BWAPI::Broodwar->drawCircleMap(m_workerScout->getPosition(), 10, BWAPI::Colors::Purple, true);
+    }
+
+    // if we initiated a gas steal and the worker isn't idle, 
+    const bool finishedConstructingGasSteal = m_workerScout->isIdle() || m_workerScout->isCarryingGas();
+    if (!m_gasStealFinished && m_didGasSteal && !finishedConstructingGasSteal)
     {
         return;
     }
-
-    if (m_to.isValid() && m_from.isValid())
+    // check to see if the gas steal is completed
+    else if (m_didGasSteal && finishedConstructingGasSteal)
     {
-        followPerimeter(m_to, m_from);
+        m_gasStealFinished = true;
     }
-    else
+   int sirka = BWAPI::Broodwar->mapWidth();
+   int vyska = BWAPI::Broodwar->mapHeight();
+
+    // for each start location in the level
+    if (!enemyBaseLocation)
     {
-        followPerimeter();
-    }
-}
+        m_scoutStatus = "Enemy base unknown, exploring";
 
-void ScoutManager::followPerimeter(int clockwise)
-{
-    BWAPI::Position goTo = getFleePosition(clockwise);
-
-    if (Config::Debug::DrawUnitTargetInfo)
-    {
-        BWAPI::Broodwar->drawCircleMap(goTo, 5, BWAPI::Colors::Red, true);
-    }
-
-    Micro::SmartMove(m_workerScout, goTo);
-}
-
-void ScoutManager::followPerimeter(BWAPI::Position to, BWAPI::Position from)
-{
-    static int following = 0;
-    if (following)
-    {
-        followPerimeter(following);
-        return;
-    }
-
-    //assume we're near FROM! 
-    if (m_workerScout->getDistance(from) < 50 && m_waypoints.empty())
-    {
-        //compute waypoints
-        std::pair<int, int> wpIDX = findSafePath(to, from);
-        bool valid = (wpIDX.first > -1 && wpIDX.second > -1);
-        UAB_ASSERT_WARNING(valid, "waypoints not valid! (transport mgr)");
-        m_waypoints.push_back(m_mapEdgeVertices[wpIDX.first]);
-        m_waypoints.push_back(m_mapEdgeVertices[wpIDX.second]);
-
-        BWAPI::Broodwar->printf("WAYPOINTS: [%d] - [%d]", wpIDX.first, wpIDX.second);
-
-        Micro::SmartMove(m_workerScout, m_waypoints[0]);
-    }
-    else if (m_waypoints.size() > 1 && m_workerScout->getDistance(m_waypoints[0]) < 100)
-    {
-        BWAPI::Broodwar->printf("FOLLOW PERIMETER TO SECOND WAYPOINT!");
-        //follow perimeter to second waypoint! 
-        //clockwise or counterclockwise? 
-        int closestPolygonIndex = getClosestVertexIndex(m_transportShip);
-        UAB_ASSERT_WARNING(closestPolygonIndex != -1, "Couldn't find a closest vertex");
-
-        if (m_mapEdgeVertices[(closestPolygonIndex + 1) % m_mapEdgeVertices.size()].getApproxDistance(m_waypoints[1]) <
-            m_mapEdgeVertices[(closestPolygonIndex - 1) % m_mapEdgeVertices.size()].getApproxDistance(m_waypoints[1]))
+        for (auto startLocation : BWAPI::Broodwar->getStartLocations())
         {
-            BWAPI::Broodwar->printf("FOLLOW clockwise");
-            following = 1;
-            followPerimeter(following);
+            // if we haven't explored it yet, explore it
+            if (!BWAPI::Broodwar->isExplored(startLocation))
+            {
+                Micro::SmartMove(m_workerScout, BWAPI::Position(0, 0));
+                BWAPI::Broodwar->drawCircleMap(BWAPI::Position(startLocation), 32, BWAPI::Colors::Purple);
+                return;
+            }
+        }
+    }
+
+    // if we know where the enemy region is and where our scout is
+    if (enemyBaseLocation)
+    {
+        const int scoutDistanceToEnemy = Global::Map().getGroundDistance(m_workerScout->getPosition(), enemyBaseLocation->getPosition());
+        const bool scoutInRangeOfenemy = scoutDistanceToEnemy <= scoutDistanceThreshold;
+
+        // we only care if the scout is under attack within the enemy region
+        // this ignores if their scout worker attacks it on the way to their base
+        if (scoutHP < m_previousScoutHP)
+        {
+            m_scoutUnderAttack = true;
+        }
+
+        if (!m_workerScout->isUnderAttack() && !enemyWorkerInRadius())
+        {
+            m_scoutUnderAttack = false;
+        }
+
+        // if the scout is in the enemy region
+        if (scoutInRangeOfenemy)
+        {
+            // get the closest enemy worker
+            BWAPI::Unit closestWorker = closestEnemyWorker();
+
+            // if the worker scout is not under attack
+            if (!m_scoutUnderAttack)
+            {
+                // if there is a worker nearby, harass it
+                if (Config::Strategy::ScoutHarassEnemy && (!Config::Strategy::GasStealWithScout || m_gasStealFinished) && closestWorker && (m_workerScout->getDistance(closestWorker) < 800))
+                {
+                    m_scoutStatus = "Harass enemy worker";
+                    Micro::SmartAttackUnit(m_workerScout, closestWorker);
+                }
+                // otherwise keep moving to the enemy region
+                else
+                {
+                    m_scoutStatus = "Following perimeter";
+                    Micro::SmartMove(m_workerScout, BWAPI::Position(enemyBaseLocation->getPosition()));
+                }
+
+            }
+            // if the worker scout is under attack
+            else
+            {
+                m_scoutStatus = "Under attack inside, fleeing";
+                fleeScout();
+            }
+        }
+        // if the scout is not in the enemy region
+        else if (m_scoutUnderAttack)
+        {
+            m_scoutStatus = "Under attack inside, fleeing";
+
+            fleeScout();
         }
         else
         {
-            BWAPI::Broodwar->printf("FOLLOW counter clockwise");
-            following = -1;
-            followPerimeter(following);
+            m_scoutStatus = "Enemy region known, going there";
+
+            // move to the enemy region
+            Micro::SmartMove(m_workerScout, BWAPI::Position(enemyBaseLocation->getPosition()));
         }
 
     }
-    else if (m_waypoints.size() > 1 && m_workerScout->getDistance(m_waypoints[1]) < 50)
-    {
-        //if close to second waypoint, go to destination!
-        following = 0;
-        Micro::SmartMove(m_transportShip, to);
-    }
-}
 
-std::pair<int, int> ScoutManager::findSafePath(BWAPI::Position to, BWAPI::Position from)
-{
-    BWAPI::Broodwar->printf("FROM: [%d,%d]", from.x, from.y);
-    BWAPI::Broodwar->printf("TO: [%d,%d]", to.x, to.y);
-
-    //closest map edge point to destination
-    int endPolygonIndex = getClosestVertexIndex(to);
-    //BWAPI::Broodwar->printf("end indx: [%d]", endPolygonIndex);
-
-    UAB_ASSERT_WARNING(endPolygonIndex != -1, "Couldn't find a closest vertex");
-    BWAPI::Position enemyEdge = m_mapEdgeVertices[endPolygonIndex];
-
-    auto* enemyBaseLocation = Global::Bases().getPlayerStartingBaseLocation(BWAPI::Broodwar->enemy());
-    BWAPI::Position enemyPosition = enemyBaseLocation->getPosition();
-
-    //find the projections on the 4 edges
- //   UAB_ASSERT_WARNING((m_minCorner.isValid() && m_maxCorner.isValid()), "Map corners should have been set! (transport mgr)");
-    std::vector<BWAPI::Position> p;
-    p.push_back(BWAPI::Position(from.x, m_minCorner.y));
-    p.push_back(BWAPI::Position(from.x, m_maxCorner.y));
-    p.push_back(BWAPI::Position(m_minCorner.x, from.y));
-    p.push_back(BWAPI::Position(m_maxCorner.x, from.y));
-
-    int d1 = p[0].getApproxDistance(enemyPosition);
-    int d2 = p[1].getApproxDistance(enemyPosition);
-    int d3 = p[2].getApproxDistance(enemyPosition);
-    int d4 = p[3].getApproxDistance(enemyPosition);
-
-    //have to choose the two points that are not max or min (the sides!)
-    int maxIndex = (d1 > d2 ? d1 : d2) > (d3 > d4 ? d3 : d4) ?
-        (d1 > d2 ? 0 : 1) : (d3 > d4 ? 2 : 3);
-
-    int minIndex = (d1 < d2 ? d1 : d2) < (d3 < d4 ? d3 : d4) ?
-        (d1 < d2 ? 0 : 1) : (d3 < d4 ? 2 : 3);
-
-    if (maxIndex > minIndex)
-    {
-        p.erase(p.begin() + maxIndex);
-        p.erase(p.begin() + minIndex);
-    }
-    else
-    {
-        p.erase(p.begin() + minIndex);
-        p.erase(p.begin() + maxIndex);
-    }
-
-    //get the one that works best from the two.
-    BWAPI::Position waypoint = (enemyEdge.getApproxDistance(p[0]) < enemyEdge.getApproxDistance(p[1])) ? p[0] : p[1];
-
-    int startPolygonIndex = getClosestVertexIndex(waypoint);
-
-    return std::pair<int, int>(startPolygonIndex, endPolygonIndex);
-
-}
-
-
-int ScoutManager::getClosestVertexIndex(BWAPI::UnitInterface* unit)
-{
-    int closestIndex = -1;
-    double closestDistance = 10000000;
-
-    for (size_t i(0); i < m_mapEdgeVertices.size(); ++i)
-    {
-        double dist = unit->getDistance(m_mapEdgeVertices[i]);
-        if (dist < closestDistance)
-        {
-            closestDistance = dist;
-            closestIndex = i;
-        }
-    }
-
-    return closestIndex;
-}
-
-int ScoutManager::getClosestVertexIndex(BWAPI::Position p)
-{
-    int closestIndex = -1;
-    double closestDistance = 10000000;
-
-    for (size_t i(0); i < m_mapEdgeVertices.size(); ++i)
-    {
-
-        double dist = p.getApproxDistance(m_mapEdgeVertices[i]);
-        if (dist < closestDistance)
-        {
-            closestDistance = dist;
-            closestIndex = i;
-        }
-    }
-
-    return closestIndex;
-}
-
-
-
-
-void ScoutManager::setFrom(BWAPI::Position from)
-{
-    if (from.isValid()) { UAlbertaBot::TransportManager::m_from = from; }
-}
-void ScoutManager::setTo(BWAPI::Position to)
-{
-    if (to.isValid()) { m_to = to; }
+    m_previousScoutHP = scoutHP;
 }
 
 void ScoutManager::fleeScout()

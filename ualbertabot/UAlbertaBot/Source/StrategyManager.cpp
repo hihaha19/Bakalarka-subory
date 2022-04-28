@@ -177,7 +177,7 @@ const bool StrategyManager::shouldExpandNow() const
     }
 
     // we will make expansion N after array[N] minutes have passed
-    std::vector<int> expansionTimes ={5, 10, 20, 30, 40 , 50};
+    std::vector<int> expansionTimes ={5, 10, 15, 18, 20 , 50};
                                  // pokial i < 6
     for (size_t i(0); i < expansionTimes.size(); ++i)
     {
@@ -454,7 +454,7 @@ const MetaPairVector StrategyManager::getZergBuildOrderGoal() const
             }
 
             if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spire) > 0)
-                goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Mutalisk, 10));
+                goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Mutalisk, 30));
 
             if (BWAPI::Broodwar->self()->minerals() > 400 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk_Den > 0))
                 goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Muscular_Augments, 1));
@@ -468,7 +468,7 @@ const MetaPairVector StrategyManager::getZergBuildOrderGoal() const
             if (BWAPI::Broodwar->self()->minerals() > 600)
                 goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Hatchery, numCC + 1));
 
-            if (BWAPI::Broodwar->self()->minerals() > 800)
+            if (BWAPI::Broodwar->self()->minerals() > 200)
                 goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Spire, 1));
 
             if (BWAPI::Broodwar->self()->minerals() > 1000 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Queens_Nest == 0))
@@ -477,17 +477,15 @@ const MetaPairVector StrategyManager::getZergBuildOrderGoal() const
             if (numHydras > 30)
                 goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Zergling, zerglings + 10));
 
-            if (BWAPI::Broodwar->self()->supplyUsed() + 8 >= BWAPI::Broodwar->self()->supplyTotal())
-                goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Overlord, 2));
 
             if (zerglings > 5)
                 goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Metabolic_Boost, 1));
 
             if (numEvolutionChamber == 0 && BWAPI::Broodwar->self()->minerals() > 500 && numHydras > 15)
-                goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Evolution_Chamber, numEvolutionChamber + 2));
+                goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Evolution_Chamber, 2));
 
             if (numEvolutionChamber == 1)
-                goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Evolution_Chamber, numEvolutionChamber + 1));
+                goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Evolution_Chamber, 2));
 
             if (numEvolutionChamber != 0 && BWAPI::Broodwar->self()->minerals() > 500)
                 goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Lair, 1));
@@ -524,6 +522,7 @@ const MetaPairVector StrategyManager::getZergBuildOrderGoal() const
         printf("Expandujem\n");
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Hatchery, numCC + 1));
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Drone, numWorkers + 10));
+        goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Extractor, numExtractor + 1));
     }
 
  //   if (shouldBuildNow()) { 

@@ -85,6 +85,7 @@ void ParseUtils::ParseConfigFile(const std::string & filename)
         JSONTools::ReadInt("BuildingSpacing", macro, Config::Macro::BuildingSpacing);
         JSONTools::ReadInt("PylongSpacing", macro, Config::Macro::PylonSpacing);
         JSONTools::ReadInt("WorkersPerRefinery", macro, Config::Macro::WorkersPerRefinery);
+        JSONTools::ReadInt("WorkersPerRefineryNoSpire", macro, Config::Macro::WorkersPerRefineryNoSpire);
     }
 
     // Parse the Debug Options

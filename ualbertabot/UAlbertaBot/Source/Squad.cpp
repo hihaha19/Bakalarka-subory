@@ -72,6 +72,8 @@ void Squad::update()
 
         m_detectorManager.setUnitClosestToEnemy(unitClosestToEnemy());
         m_detectorManager.execute(m_order);
+        BWAPI::Unitset nic;
+        m_detectorManager.executeMicro(nic);
     }
 }
 
@@ -170,6 +172,7 @@ void Squad::addUnitsToMicroManagers()
             }
             else if (unit->getType().isDetector() && !unit->getType().isBuilding())
             {
+         //       printf("Insertujem detectora\n");
                 detectorUnits.insert(unit);
             }
             // select transport m_units

@@ -35,6 +35,7 @@ public:
     void finishedWithCombatWorkers();
     void drawResourceDebugInfo();
     void updateWorkerStatus();
+    void FromRefineryToMineral();
     void drawWorkerInformation(int x, int y);
 
     int  getNumMineralWorkers();

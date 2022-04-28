@@ -4,7 +4,7 @@
 #include "BaseLocationManager.h"
 #include "Global.h"
 #include "BuildingData.h"
-#include <Config.cpp>
+#include "UnitUtil.h"
 
 using namespace UAlbertaBot;
 
@@ -22,7 +22,7 @@ void WorkerManager::onFrame()
     handleIdleWorkers();
     handleMoveWorkers();
     handleCombatWorkers();
-
+  //  FromRefineryToMineral();
     drawResourceDebugInfo();
     drawWorkerInformation(450, 20);
 
@@ -66,6 +66,83 @@ void WorkerManager::updateWorkerStatus()
     }
 }
 
+
+void WorkerManager::FromRefineryToMineral()
+{
+      int numMineralWorkers = m_workerData.getNumMineralWorkers();
+      int numGasWorkers = m_workerData.getNumGasWorkers();
+      printf("Najprv min workers %d\n", numMineralWorkers);
+
+      int frame = BWAPI::Broodwar->getFrameCount();
+      int minute = frame / (24 * 60);
+
+      
+
+      if (numMineralWorkers < 3 && minute > 2) 
+          for (auto& worker : m_workerData.getWorkers())
+          {
+              numMineralWorkers = m_workerData.getNumMineralWorkers();
+              numGasWorkers = m_workerData.getNumGasWorkers();
+              printf("Mineral %d Gas %d\n", numMineralWorkers, numGasWorkers);
+              printf("Menej ako 5\n");
+              if (numGasWorkers < 3 || numMineralWorkers > 5)
+                  break;
+              
+
+              if (!worker->isCompleted())
+              {
+                  continue;
+              }
+
+              if (m_workerData.getWorkerJob(worker) == WorkerData::Gas) {
+                  if (worker->isCarryingGas())
+                  {
+                      setMineralWorker(worker);
+                      worker->returnCargo();
+                      
+                  }
+                  setMineralWorker(worker);
+              //    BWAPI::Position LavyDolnyOproti(400, 400);
+                //  Micro::SmartMove(worker, LavyDolnyOproti);
+                 //   m_workerData.setWorkerJob(worker, WorkerData::Idle, nullptr);
+                   // handleIdleWorkers();
+              }
+
+          }
+
+
+
+      // for each unit we have
+    /*  for (auto& unit : BWAPI::Broodwar->self()->getUnits())
+      {
+          // if that unit is a refinery
+          if (unit->getType().isMineralField())
+          {
+              // get the number of workers currently assigned to it
+              const int numAssigned = m_workerData.getNumAssignedWorkers(unit);
+
+              // if it's less than we want it to be, fill 'er up
+              for (int i = 0; i < (Config::Macro::WorkersPerRefinery - numAssigned); ++i)
+              {
+                  int numMineralWorkers = m_workerData.getNumMineralWorkers();
+                  int numGasWorkers = m_workerData.getNumGasWorkers();
+                  if (numMineralWorkers < 3)
+                      break;
+                  BWAPI::Unit gasWorker = getGasWorker(unit);
+                  if (gasWorker)
+                  {
+                      m_workerData.setWorkerJob(gasWorker, WorkerData::Gas, unit);
+                  }
+              }
+          }
+      }
+      */
+
+
+
+}
+
+
 void WorkerManager::setRepairWorker(BWAPI::Unit worker, BWAPI::Unit unitToRepair)
 {
     m_workerData.setWorkerJob(worker, WorkerData::Repair, unitToRepair);
@@ -81,16 +158,17 @@ void WorkerManager::handleGasWorkers()
     // for each unit we have
     for (auto & unit : BWAPI::Broodwar->self()->getUnits())
     {
-        // if that unit is a refinery
-        if (unit->getType().isRefinery() && unit->isCompleted() && !isGasStealRefinery(unit))
-        {
-            // get the number of workers currently assigned to it
-            const int numAssigned = m_workerData.getNumAssignedWorkers(unit);
+        if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spire) == 0) {
+            if (unit->getType().isRefinery() && unit->isCompleted() && !isGasStealRefinery(unit))
+            {
+                // get the number of workers currently assigned to it
+                const int numAssigned = m_workerData.getNumAssignedWorkers(unit);
 
-            // if it's less than we want it to be, fill 'er up
-            if (Config::Strategy::StrategyName == "Zerg_ZerglingRush") {
-                for (int i = 0; i < (Config::Macro::WorkersPerRefineryZerglingRush - numAssigned); ++i)
+                // if it's less than we want it to be, fill 'er up
+                for (int i = 0; i < (Config::Macro::WorkersPerRefineryNoSpire - numAssigned); ++i)
                 {
+                    int numMineralWorkers = m_workerData.getNumMineralWorkers();
+                    int numGasWorkers = m_workerData.getNumGasWorkers();
                     BWAPI::Unit gasWorker = getGasWorker(unit);
                     if (gasWorker)
                     {
@@ -98,10 +176,21 @@ void WorkerManager::handleGasWorkers()
                     }
                 }
             }
+        }
 
-            else {
+
+        // if that unit is a refinery
+        else {
+            if (unit->getType().isRefinery() && unit->isCompleted() && !isGasStealRefinery(unit))
+            {
+                // get the number of workers currently assigned to it
+                const int numAssigned = m_workerData.getNumAssignedWorkers(unit);
+
+                // if it's less than we want it to be, fill 'er up
                 for (int i = 0; i < (Config::Macro::WorkersPerRefinery - numAssigned); ++i)
                 {
+                    int numMineralWorkers = m_workerData.getNumMineralWorkers();
+                    int numGasWorkers = m_workerData.getNumGasWorkers();
                     BWAPI::Unit gasWorker = getGasWorker(unit);
                     if (gasWorker)
                     {
@@ -109,10 +198,12 @@ void WorkerManager::handleGasWorkers()
                     }
                 }
             }
-
         }
-    }
 
+
+
+
+    }
 }
 
 bool WorkerManager::isGasStealRefinery(BWAPI::Unit unit)
@@ -387,6 +478,7 @@ void WorkerManager::finishedWithWorker(BWAPI::Unit unit)
     }
 }
 
+
 BWAPI::Unit WorkerManager::getGasWorker(BWAPI::Unit refinery)
 {
     UAB_ASSERT(refinery != nullptr, "Refinery was null");
@@ -658,6 +750,8 @@ void WorkerManager::rebalanceWorkers()
         }
     }
 }
+
+
 
 void WorkerManager::onUnitDestroy(BWAPI::Unit unit)
 {
