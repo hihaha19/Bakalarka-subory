@@ -97,7 +97,6 @@ void BuildingManager::assignWorkersToUnassignedBuildings()
 
         if (workerToAssign)
         {
-
             b.builderUnit = workerToAssign;
 
             theMap.Initialize(BWAPI::BroodwarPtr);
@@ -178,19 +177,67 @@ void BuildingManager::assignWorkersToUnassignedBuildings()
             if (b.type == BWAPI::UnitTypes::Terran_Bunker ||
                 b.type == BWAPI::UnitTypes::Protoss_Photon_Cannon ||
                 b.type == BWAPI::UnitTypes::Zerg_Creep_Colony) {
-                int sunken_a_creep = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Sunken_Colony) + 
-                    UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Creep_Colony);
+                int defenzivne_struktury = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Sunken_Colony) + 
+                    UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Creep_Colony) + 
+                    UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spore_Colony);
                 int numSpore = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spore_Colony);
                 int numCC = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Command_Center);
                 int frame = BWAPI::Broodwar->getFrameCount();
                 int minute = frame / (24 * 60);
-                if (numCC != 1 && sunken_a_creep >= 3) {
-                    auto tile = Global::Bases().getDefensePosition(BWAPI::Broodwar->self());
-                    b.desiredPosition = tile;
-              //      printf("Desired %d %d\n", b.desiredPosition.x, b.desiredPosition.y);
-                }
 
-                else if (sunken_a_creep < 3) {
+                    double minDist(1000000);
+                    auto tile = Global::Bases().getOccupiedBaseLocations(BWAPI::Broodwar->self());
+                    for (auto& lokacia : tile) {
+                        if (!lokacia->isPlayerStartLocation(BWAPI::Broodwar->self())) {
+                            double vzdialenost = lokacia->getDepotPosition().getDistance(BWAPI::Broodwar->self()->getStartLocation());
+                            if (vzdialenost < minDist)
+                                minDist = vzdialenost;
+                        }
+                    }
+
+                    for (auto& lokacia : tile) {
+                  //      if (defenzivne_struktury < 1) {
+                    //        if (minDist == lokacia->getDepotPosition().getDistance(BWAPI::Broodwar->self()->getStartLocation()))
+                      //          b.desiredPosition = (BWAPI::TilePosition)lokacia->getDepotPosition();
+                      //  }
+
+                     //   else if (defenzivne_struktury >= 1 && defenzivne_struktury < 6) {
+                            if (minDist == lokacia->getDepotPosition().getDistance(BWAPI::Broodwar->self()->getStartLocation())) {
+ 
+                            //    printf("Expand depot %d %d\n", lokacia->getDepotPosition().x*32, lokacia->getDepotPosition().y*32);
+                                auto chokePoints = theMap.GetArea(lokacia->getDepotPosition())->ChokePoints();
+                                BWAPI::Position Mapa(theMap.Center());
+                                minDist = 100000000;
+                                for (auto& choke : chokePoints) {
+                               //     printf("Hladam choke %d %d\n", (BWAPI::Position)choke->Center());
+                                  //  printf("Mapa center %d %d\n", Mapa.x, Mapa.y); //2048 a 1536
+                                 //   printf("Start %d %d\n", theMap.GetArea(BWAPI::Broodwar->self()->getStartLocation()));
+                                  //  double vzdialenostLH = detectorUnit->getDistance(LavyHorny);
+                                    int vzdialenost = Mapa.getDistance((BWAPI::Position)choke->Center());
+                                //    printf("Vzdialenost %d\n", vzdialenost);
+                                    if (vzdialenost < minDist)
+                                        minDist = vzdialenost;
+                                }
+
+                                for (auto& choke : chokePoints) {
+                                 //   printf("MinDist %d\n", (int)minDist);
+                                //    printf("GetDistance %d\n", (int)Mapa.getDistance((BWAPI::Position)choke->Center()));
+                                    //printf("Suradnice choke %d %d\n", (BWAPI::Position)choke->Center());
+                                    if ((int)minDist == (int)Mapa.getDistance((BWAPI::Position)choke->Center())) {
+                                        b.desiredPosition = (BWAPI::TilePosition)choke->Center();
+                                      //  printf("Desired x %d, y %d\n", b.desiredPosition.x, b.desiredPosition.y);
+                                      //  printf("Zvacseny x %d, y %d\n", b.desiredPosition.x*32, b.desiredPosition.y*32);
+                                        break;
+                                    }
+                                       
+                                }
+                            }
+                            
+                        }
+                    
+                
+
+             /*   else {
                     theMap.Initialize(BWAPI::BroodwarPtr);
                     theMap.EnableAutomaticPathAnalysis();
                     bool startingLocationsOK = theMap.FindBasesForStartingLocations();
@@ -205,25 +252,7 @@ void BuildingManager::assignWorkersToUnassignedBuildings()
                         //    b.finalPosition.x = b.finalPosition.x - 10;
                         //    BWAPI::Game::canBuildHere(b.finalPosition, b.type, b.builderUnit);
                     }
-                }
-
-
-                else {
-                    theMap.Initialize(BWAPI::BroodwarPtr);
-                    theMap.EnableAutomaticPathAnalysis();
-                    bool startingLocationsOK = theMap.FindBasesForStartingLocations();
-                    assert(startingLocationsOK);
-
-                    auto chokePoints = theMap.GetArea(BWAPI::Broodwar->self()->getStartLocation())->ChokePoints();
-
-                        for (auto& choke : chokePoints)
-                        {
-                            b.desiredPosition = (BWAPI::TilePosition)choke->Center();
-                            printf("Choke pointy X %d Y %d\n", b.desiredPosition);
-                            //    b.finalPosition.x = b.finalPosition.x - 10;
-                            //    BWAPI::Game::canBuildHere(b.finalPosition, b.type, b.builderUnit);
-                        }
-                    }
+                }*/
             }
             
           /*  if (b.type == BWAPI::UnitTypes::Zerg_Hatchery) {

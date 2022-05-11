@@ -154,11 +154,6 @@ int RangedManager::getAttackPriority(BWAPI::Unit rangedUnit, BWAPI::Unit target)
         isThreat = false;
     }
 
- /*   if (target->getType() == BWAPI::UnitTypes::Zerg_Overlord ||
-        target->getType() == BWAPI::UnitTypes::Zerg_Lair)
-    {
-        isThreat = true;
-    }*/
 
     if (target->getType() == BWAPI::UnitTypes::Zerg_Larva || target->getType() == BWAPI::UnitTypes::Zerg_Egg)
     {
@@ -189,7 +184,7 @@ int RangedManager::getAttackPriority(BWAPI::Unit rangedUnit, BWAPI::Unit target)
     // nove
     if (targetType == BWAPI::UnitTypes::Protoss_Dark_Templar)
     {
-        return 0;
+        return 20;
     }
 
     if (targetType == BWAPI::UnitTypes::Protoss_Reaver)

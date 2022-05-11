@@ -114,7 +114,7 @@ namespace Config
     {
         int BOSSFrameLimit                  = 160;
         int BOSSTimePerFrame                = 30;
-        int WorkersPerRefineryNoSpire       = 2;
+        int WorkersPerRefineryNoMutalisk       = 2;
         int WorkersPerRefinery              = 3;
         int BuildingSpacing                 = 1;
         int PylonSpacing                    = 3;

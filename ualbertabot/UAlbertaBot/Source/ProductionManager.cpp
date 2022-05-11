@@ -10,7 +10,16 @@
 #include "UnitUtil.h"
 #include "BaseLocationManager.h"
 
+#include "BWEM/src/bwem.h"
+#include "UnitUtil.h"
 
+using namespace BWEM;
+using namespace BWEM::BWAPI_ext;
+using namespace BWEM::utils;
+
+using namespace BWAPI;
+using namespace Filter;
+namespace { auto& theMap = BWEM::Map::Instance(); }
 
 using namespace UAlbertaBot;
 
@@ -45,10 +54,6 @@ void ProductionManager::performBuildOrderSearch()
     // predchadzajuci build order?
     BuildOrder& buildOrder = m_bossManager.getBuildOrder();
 
-    /*if (BWAPI::Broodwar->self()->supplyUsed() > BWAPI::Broodwar->self()->supplyTotal()) {
-        m_bossManager.reset();
-        m_bossManager.startNewSearch(Global::Strategy().getBuildOrderGoal());
-    }*/
 
     if (buildOrder.size() > 0)
     {
@@ -91,10 +96,6 @@ void ProductionManager::update()
 
 
 
-        // buildOrder.add(MetaType(BWAPI::UnitTypes::Terran_Control_Tower));
-
-
-
         performBuildOrderSearch();
 
     }
@@ -123,7 +124,8 @@ void ProductionManager::update()
 
 
     if (Config::Strategy::StrategyName == "Zerg_2HatchHydra") {
-        if ((BWAPI::Broodwar->getFrameCount() % 240 == 0) && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Drone) == 0)
+        if ((BWAPI::Broodwar->getFrameCount() % 240 == 0) && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Drone) < 7 &&
+            BWAPI::Broodwar->getFrameCount() > 7200)
         {
             if (Config::Debug::DrawBuildOrderSearchInfo)
             {
@@ -134,7 +136,7 @@ void ProductionManager::update()
 
         // pridat rafineriu
 
-        if (BWAPI::Broodwar->getFrameCount() > 7200 && (BWAPI::Broodwar->getFrameCount() % 120 == 0) && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk) == 0 &&
+        if (BWAPI::Broodwar->getFrameCount() > 10000 && (BWAPI::Broodwar->getFrameCount() % 120 == 0) && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk) == 0 &&
             UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk_Den) > 0)
         {
             if (Config::Debug::DrawBuildOrderSearchInfo)
@@ -147,7 +149,28 @@ void ProductionManager::update()
 
 
     if (Config::Strategy::StrategyName == "Zerg_2HatchHydra") {
-        if (BWAPI::Broodwar->getFrameCount() > 5800 && BWAPI::Broodwar->getFrameCount() % 240 == 0 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk_Den) == 0 &&
+        if (BWAPI::Broodwar->getFrameCount() > 15000 && BWAPI::Broodwar->getFrameCount() % 1440 == 0 && (
+            UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Sunken_Colony) < 2 ||
+            UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spore_Colony) < 2))
+        {
+            if (Config::Debug::DrawBuildOrderSearchInfo)
+            {
+                BWAPI::Broodwar->printf("chybajuce defenzivne struktury");
+            }
+            m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Zerg_Creep_Colony), true);
+        }
+
+        if (BWAPI::Broodwar->getFrameCount() > 8500 && BWAPI::Broodwar->getFrameCount() % 1440 == 0 && (
+            UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Sunken_Colony) < 2))
+        {
+            if (Config::Debug::DrawBuildOrderSearchInfo)
+            {
+                BWAPI::Broodwar->printf("chyba sunken");
+            }
+            m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Zerg_Creep_Colony), true);
+        }
+
+        if (BWAPI::Broodwar->getFrameCount() > 8000 && BWAPI::Broodwar->getFrameCount() % 1440 == 0 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk_Den) == 0 &&
             UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Extractor) > 0 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Drone) > 0)
         {
             if (Config::Debug::DrawBuildOrderSearchInfo)
@@ -157,7 +180,7 @@ void ProductionManager::update()
             m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Zerg_Hydralisk_Den), true);
         }
 
-        if (BWAPI::Broodwar->getFrameCount() > 5800 && BWAPI::Broodwar->getFrameCount() % 480 == 0 && 
+        if (BWAPI::Broodwar->getFrameCount() > 5800 && BWAPI::Broodwar->getFrameCount() % 1440 == 0 && 
             (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hatchery) + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair)
                 + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hive)) < 2 &&
             UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Drone) > 0)
@@ -178,32 +201,36 @@ void ProductionManager::update()
             }
             m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Zerg_Extractor), true);
         }
+
+        if (BWAPI::Broodwar->getFrameCount() > 4000 && BWAPI::Broodwar->getFrameCount() % 240 == 0 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spawning_Pool) == 0 &&
+            UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Drone) > 0) {
+            if (Config::Debug::DrawBuildOrderSearchInfo)
+            {
+                BWAPI::Broodwar->printf("nemam spawning pool");
+            }
+            m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Zerg_Spawning_Pool), true);
+        }
+
+        if (BWAPI::Broodwar->getFrameCount() > 15000 && BWAPI::Broodwar->getFrameCount() % 750 == 0 && (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Extractor) < (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hatchery) +
+            UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair) + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hive))) && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spire) > 0) {
+            if (Config::Debug::DrawBuildOrderSearchInfo)
+            {
+                BWAPI::Broodwar->printf("menej extractorov ako zakladni");
+            }
+            m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Zerg_Extractor), true);
+        }
+
+        if (BWAPI::Broodwar->getFrameCount() > 15000 && BWAPI::Broodwar->getFrameCount() % 1440 == 0 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Evolution_Chamber) == 0 &&
+            UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Drone) > 0) {
+            if (Config::Debug::DrawBuildOrderSearchInfo)
+            {
+                BWAPI::Broodwar->printf("nemam chamber");
+            }
+            m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Zerg_Extractor), true);
+        }
         
     }
     
-
-
-    // pridane na lurkera
-    for (auto& unit : BWAPI::Broodwar->enemy()->getUnits())
-    {
-        if (unit->getType() == BWAPI::UnitTypes::Zerg_Lurker)
-        {
-            if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Terran)
-            {
-                if (BWAPI::Broodwar->self()->allUnitCount(BWAPI::UnitTypes::Terran_Missile_Turret) < 2)
-                {
-                    m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Missile_Turret), true);
-                    m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Missile_Turret), true);
-                }
-
-                if (BWAPI::Broodwar->self()->allUnitCount(BWAPI::UnitTypes::Terran_Engineering_Bay) == 0)
-                {
-                    m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Terran_Engineering_Bay), true);
-                }
-            }
-        }
-        break;
-    }
 
     // if they have cloaked units get a new goal asap
 
@@ -312,6 +339,13 @@ void ProductionManager::manageBuildOrderQueue()
             }
         }
 
+        if (currentItem.metaType.getName() == "Zerg_Hydralisk_Den") {
+            if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk_Den) > 1) {
+                m_queue.removeCurrentHighestPriorityItem();
+                break;
+            }
+        }
+
         if (currentItem.metaType.getName() == "Zerg_Lair") {
             if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair) > 0) {
                 m_queue.removeCurrentHighestPriorityItem();
@@ -391,50 +425,78 @@ BWAPI::Unit ProductionManager::getProducer(MetaType t, BWAPI::Position closestTo
 
     // make a set of all candidate producers
     BWAPI::Unitset candidateProducers;
+
     for (auto& unit : BWAPI::Broodwar->self()->getUnits())
     {
         UAB_ASSERT(unit != nullptr, "Unit was null");
 
-
                if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Zerg) {
-                   if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair) == 0 && BWAPI::Broodwar->self()->minerals() > 300 &&
-                       UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Evolution_Chamber > 0))
-                       if (unit->getType() == BWAPI::UnitTypes::Zerg_Hatchery) 
-                           unit->morph(BWAPI::UnitTypes::Zerg_Lair);
-                       
-                   if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hive) == 0 && BWAPI::Broodwar->self()->minerals() > 2000 &&
-                       UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Queens_Nest) > 0)
-                       if (unit->getType() == BWAPI::UnitTypes::Zerg_Lair)
-                           unit->morph(BWAPI::UnitTypes::Zerg_Hive);
+                   if (unit->getType() == BWAPI::UnitTypes::Zerg_Hatchery &&
+                          BWAPI::Broodwar->self()->getStartLocation().getDistance(unit->getTilePosition()) == 0 && 
+                       UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair) == 0 && BWAPI::Broodwar->self()->minerals() > 400)
+                   {
+                       unit->morph(BWAPI::UnitTypes::Zerg_Lair);
+                   }
+                           
+                          
 
-                   if (unit->getType() == BWAPI::UnitTypes::Zerg_Creep_Colony && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spore_Colony) < 2)
+                   if (unit->getType() == BWAPI::UnitTypes::Zerg_Creep_Colony && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spore_Colony) < 2 &&
+                       UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Sunken_Colony) > 2)
                        unit->morph(BWAPI::UnitTypes::Zerg_Spore_Colony);
                    
                    if (unit->getType() == BWAPI::UnitTypes::Zerg_Creep_Colony) 
-                     unit->morph(BWAPI::UnitTypes::Zerg_Sunken_Colony);
+                       if(UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Sunken_Colony) < 3 || UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spore_Colony) >= 2)
+                            unit->morph(BWAPI::UnitTypes::Zerg_Sunken_Colony);
 
                    
                    if (unit->getType() == BWAPI::UnitTypes::Zerg_Lair) {
-                       unit->upgrade(BWAPI::UpgradeTypes::Pneumatized_Carapace); }
-                   
+                       if (unit->canUpgrade(BWAPI::UpgradeTypes::Pneumatized_Carapace))
+                            unit->upgrade(BWAPI::UpgradeTypes::Pneumatized_Carapace);
+                       else 
+                           unit->upgrade(BWAPI::UpgradeTypes::Antennae);
+                   }
+
                        
                    if (unit->getType() == BWAPI::UnitTypes::Zerg_Spire && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Mutalisk) > 5) {
-                       unit->upgrade(BWAPI::UpgradeTypes::Zerg_Flyer_Carapace);
-                       unit->upgrade(BWAPI::UpgradeTypes::Zerg_Flyer_Attacks);
+                       if(unit->canUpgrade(BWAPI::UpgradeTypes::Zerg_Flyer_Attacks))
+                           unit->upgrade(BWAPI::UpgradeTypes::Zerg_Flyer_Attacks);
+                       else
+                           unit->upgrade(BWAPI::UpgradeTypes::Zerg_Flyer_Carapace);  
                    }
                    
-                   if (unit->getType() == BWAPI::UnitTypes::Zerg_Evolution_Chamber)
+                   if (unit->getType() == BWAPI::UnitTypes::Zerg_Evolution_Chamber && 
+                       (BWAPI::UpgradeTypes::Zerg_Missile_Attacks.whatsRequired(1) != BWAPI::UnitTypes::Zerg_Lair ||
+                           UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair) > 0))
                        unit->upgrade(BWAPI::UpgradeTypes::Zerg_Missile_Attacks);
 
-                   if (unit->getType() == BWAPI::UnitTypes::Zerg_Evolution_Chamber)
+//                   if(unit->canUpgrade(BWAPI::UpgradeTypes::Zerg_Carapace.whatsRequired()
+//                   printf("%s\n", unit->canUpgrade(BWAPI::UpgradeTypes::Zerg_Carapace.whatsRequired(2).toString().c_str()));
+                  // printf("%s\n", BWAPI::UpgradeTypes::Zerg_Carapace.whatsRequired(2).toString().c_str());
+                  
+
+                   if (unit->getType() == BWAPI::UnitTypes::Zerg_Evolution_Chamber && 
+                       (BWAPI::UpgradeTypes::Zerg_Carapace.whatsRequired(1) != BWAPI::UnitTypes::Zerg_Lair || 
+                       UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair) > 0))
                        unit->upgrade(BWAPI::UpgradeTypes::Zerg_Carapace);
 
                    //ak mam > 10 zerglingov, urob upgrade utoku zerglingov
                     if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Zergling) > 10)
-                        if(unit->getType() == BWAPI::UnitTypes::Zerg_Evolution_Chamber)
+                        if(unit->getType() == BWAPI::UnitTypes::Zerg_Evolution_Chamber && 
+                            (BWAPI::UpgradeTypes::Zerg_Melee_Attacks.whatsRequired(1) != BWAPI::UnitTypes::Zerg_Lair ||
+                                UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair) > 0))
                             unit->upgrade(BWAPI::UpgradeTypes::Zerg_Melee_Attacks);
                       
                }
+
+               if (unit->getType() == BWAPI::UnitTypes::Zerg_Hydralisk_Den && unit->canUpgrade(BWAPI::UpgradeTypes::Grooved_Spines)
+                   && BWAPI::Broodwar->self()->minerals() > 400 && BWAPI::Broodwar->getFrameCount() > 14000)
+                   unit->upgrade(BWAPI::UpgradeTypes::Grooved_Spines);
+
+               if (unit->getType() == BWAPI::UnitTypes::Zerg_Hydralisk_Den && unit->canUpgrade(BWAPI::UpgradeTypes::Muscular_Augments)
+                   && BWAPI::Broodwar->self()->minerals() > 400 && BWAPI::Broodwar->getFrameCount() > 14000)
+                   unit->upgrade(BWAPI::UpgradeTypes::Muscular_Augments);
+
+               
 
                // terran
                if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Terran) {
@@ -606,7 +668,7 @@ void ProductionManager::create(BWAPI::Unit producer, BuildOrderItem& item)
     }
     */
 
-    /*for (auto& base : getBaseLocations())
+  /*  for (auto& base : getBaseLocations())
         {
             if (base->isOccupiedByPlayer(BWAPI::Broodwar->self())) {
                 BWAPI::TilePosition homeTile(base->getPosition());

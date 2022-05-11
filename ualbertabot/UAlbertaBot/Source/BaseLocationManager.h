@@ -42,7 +42,6 @@ public:
 
     BWAPI::TilePosition getDefensePosition(BWAPI::Player player) const;
 
-    BWAPI::TilePosition getHatcheryPosition(BWAPI::Player player) const;
 
 };
 }

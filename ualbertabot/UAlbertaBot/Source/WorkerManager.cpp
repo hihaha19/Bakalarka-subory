@@ -158,17 +158,16 @@ void WorkerManager::handleGasWorkers()
     // for each unit we have
     for (auto & unit : BWAPI::Broodwar->self()->getUnits())
     {
-        if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spire) == 0) {
+
+         if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Mutalisk) == 0) {
             if (unit->getType().isRefinery() && unit->isCompleted() && !isGasStealRefinery(unit))
             {
                 // get the number of workers currently assigned to it
                 const int numAssigned = m_workerData.getNumAssignedWorkers(unit);
 
                 // if it's less than we want it to be, fill 'er up
-                for (int i = 0; i < (Config::Macro::WorkersPerRefineryNoSpire - numAssigned); ++i)
+                for (int i = 0; i < (Config::Macro::WorkersPerRefineryNoMutalisk - numAssigned); ++i)
                 {
-                    int numMineralWorkers = m_workerData.getNumMineralWorkers();
-                    int numGasWorkers = m_workerData.getNumGasWorkers();
                     BWAPI::Unit gasWorker = getGasWorker(unit);
                     if (gasWorker)
                     {
@@ -199,10 +198,6 @@ void WorkerManager::handleGasWorkers()
                 }
             }
         }
-
-
-
-
     }
 }
 

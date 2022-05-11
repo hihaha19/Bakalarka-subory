@@ -22,6 +22,7 @@ namespace { auto& theMap = BWEM::Map::Instance(); }
 BaseLocationManager::BaseLocationManager()
 {
     onStart();
+    srand(time(0));
 }
 
 BWAPI::Position BaseLocationManager::calcCenter(const std::vector<BWAPI::Unit> & units)
@@ -465,36 +466,3 @@ BWAPI::TilePosition BaseLocationManager::getDefensePosition(BWAPI::Player player
     }
 }
 
-BWAPI::TilePosition BaseLocationManager::getHatcheryPosition(BWAPI::Player player) const {
-    int pocetOkupovanychLokacii = 0;
-    int numCC = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hatchery) + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair);
-    int frame = BWAPI::Broodwar->getFrameCount();
-    int minute = frame / (24 * 60);
-
-    for (auto& base : getBaseLocations())
-    {
-        if (base->isOccupiedByPlayer(BWAPI::Broodwar->self()))
-            pocetOkupovanychLokacii++;
-    }
-
-    printf("Pocet okupovanych %d\n", pocetOkupovanychLokacii);
-
-
-    
-
-    std::vector<int> expansionTimes = { 5, 10, 20, 30, 40 , 50 };
-    // pokial i < 6
-    for (size_t i(0); i < expansionTimes.size(); ++i)
-    {
-        if (numCC <= (i + 2)) {
-
-        }
-
-        if (numCC < (i + 2) && minute > expansionTimes[i])
-        {
-            printf("\nPresli %d minuty\n", i);
-        }
-    }
-
-   // return pocetOkupovanychLokacii;
-}
