@@ -113,7 +113,6 @@ void ProductionManager::update()
 
     if((BWAPI::Broodwar->getFrameCount() % 240 == 0) && (BWAPI::Broodwar->self()->supplyUsed() > BWAPI::Broodwar->self()->supplyTotal()))
     {
-        printf("used %d total %d\n", BWAPI::Broodwar->self()->supplyUsed(), BWAPI::Broodwar->self()->supplyTotal());
         if (Config::Debug::DrawBuildOrderSearchInfo)
         {
             BWAPI::Broodwar->printf("Supply deadlock detected, building supply!");
@@ -437,8 +436,7 @@ BWAPI::Unit ProductionManager::getProducer(MetaType t, BWAPI::Position closestTo
                    {
                        unit->morph(BWAPI::UnitTypes::Zerg_Lair);
                    }
-                           
-                          
+                                        
 
                    if (unit->getType() == BWAPI::UnitTypes::Zerg_Creep_Colony && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spore_Colony) < 2 &&
                        UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Sunken_Colony) > 2)
@@ -468,10 +466,6 @@ BWAPI::Unit ProductionManager::getProducer(MetaType t, BWAPI::Position closestTo
                        (BWAPI::UpgradeTypes::Zerg_Missile_Attacks.whatsRequired(1) != BWAPI::UnitTypes::Zerg_Lair ||
                            UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair) > 0))
                        unit->upgrade(BWAPI::UpgradeTypes::Zerg_Missile_Attacks);
-
-//                   if(unit->canUpgrade(BWAPI::UpgradeTypes::Zerg_Carapace.whatsRequired()
-//                   printf("%s\n", unit->canUpgrade(BWAPI::UpgradeTypes::Zerg_Carapace.whatsRequired(2).toString().c_str()));
-                  // printf("%s\n", BWAPI::UpgradeTypes::Zerg_Carapace.whatsRequired(2).toString().c_str());
                   
 
                    if (unit->getType() == BWAPI::UnitTypes::Zerg_Evolution_Chamber && 
@@ -496,32 +490,29 @@ BWAPI::Unit ProductionManager::getProducer(MetaType t, BWAPI::Position closestTo
                    && BWAPI::Broodwar->self()->minerals() > 400 && BWAPI::Broodwar->getFrameCount() > 14000)
                    unit->upgrade(BWAPI::UpgradeTypes::Muscular_Augments);
 
-               
+               if (unit->getType() == BWAPI::UnitTypes::Zerg_Spawning_Pool && unit->canUpgrade(BWAPI::UpgradeTypes::Metabolic_Boost)
+                   && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Zergling) > 5)
+                   unit->upgrade(BWAPI::UpgradeTypes::Metabolic_Boost);
 
-               // terran
+               // terran - nalozenie jednotiek do bunkru
                if (BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Terran) {
-
                    if (unit->getType() == BWAPI::UnitTypes::Terran_Bunker) {
                        for (auto& unit_1 : BWAPI::Broodwar->self()->getUnits()) {
-                           if (unit_1->getType() == BWAPI::UnitTypes::Terran_Medic && unit->getLoadedUnits().contains(unit_1))
-                               continue;
-
-                           else if (unit_1->getType() == BWAPI::UnitTypes::Terran_Firebat || unit_1->getType() == BWAPI::UnitTypes::Terran_Medic)
+                            if (unit_1->getType() == BWAPI::UnitTypes::Terran_Firebat || unit_1->getType() == BWAPI::UnitTypes::Terran_Marine)
                                unit->load(unit_1);
                            else continue;
                        }
                    }
                }
 
-                // protoss
+                // protoss - nalozenie shuttle
+
                if(BWAPI::Broodwar->self()->getRace() == BWAPI::Races::Protoss)
                    if (unit->getType() == BWAPI::UnitTypes::Protoss_Shuttle) {
                        for (auto& unit_1 : BWAPI::Broodwar->self()->getUnits()) {
                            if (unit_1->getType() == BWAPI::UnitTypes::Protoss_Zealot)
                                unit->load(unit_1);
                            else continue;
-
-                             //  unit->load(unit_1);
                        }
                    }
                    

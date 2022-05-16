@@ -196,23 +196,11 @@ void BuildingManager::assignWorkersToUnassignedBuildings()
                     }
 
                     for (auto& lokacia : tile) {
-                  //      if (defenzivne_struktury < 1) {
-                    //        if (minDist == lokacia->getDepotPosition().getDistance(BWAPI::Broodwar->self()->getStartLocation()))
-                      //          b.desiredPosition = (BWAPI::TilePosition)lokacia->getDepotPosition();
-                      //  }
-
-                     //   else if (defenzivne_struktury >= 1 && defenzivne_struktury < 6) {
                             if (minDist == lokacia->getDepotPosition().getDistance(BWAPI::Broodwar->self()->getStartLocation())) {
- 
-                            //    printf("Expand depot %d %d\n", lokacia->getDepotPosition().x*32, lokacia->getDepotPosition().y*32);
-                                auto chokePoints = theMap.GetArea(lokacia->getDepotPosition())->ChokePoints();
+                                 auto chokePoints = theMap.GetArea(lokacia->getDepotPosition())->ChokePoints();
                                 BWAPI::Position Mapa(theMap.Center());
                                 minDist = 100000000;
                                 for (auto& choke : chokePoints) {
-                               //     printf("Hladam choke %d %d\n", (BWAPI::Position)choke->Center());
-                                  //  printf("Mapa center %d %d\n", Mapa.x, Mapa.y); //2048 a 1536
-                                 //   printf("Start %d %d\n", theMap.GetArea(BWAPI::Broodwar->self()->getStartLocation()));
-                                  //  double vzdialenostLH = detectorUnit->getDistance(LavyHorny);
                                     int vzdialenost = Mapa.getDistance((BWAPI::Position)choke->Center());
                                 //    printf("Vzdialenost %d\n", vzdialenost);
                                     if (vzdialenost < minDist)
@@ -220,13 +208,8 @@ void BuildingManager::assignWorkersToUnassignedBuildings()
                                 }
 
                                 for (auto& choke : chokePoints) {
-                                 //   printf("MinDist %d\n", (int)minDist);
-                                //    printf("GetDistance %d\n", (int)Mapa.getDistance((BWAPI::Position)choke->Center()));
-                                    //printf("Suradnice choke %d %d\n", (BWAPI::Position)choke->Center());
                                     if ((int)minDist == (int)Mapa.getDistance((BWAPI::Position)choke->Center())) {
                                         b.desiredPosition = (BWAPI::TilePosition)choke->Center();
-                                      //  printf("Desired x %d, y %d\n", b.desiredPosition.x, b.desiredPosition.y);
-                                      //  printf("Zvacseny x %d, y %d\n", b.desiredPosition.x*32, b.desiredPosition.y*32);
                                         break;
                                     }
                                        

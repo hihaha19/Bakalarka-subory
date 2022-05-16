@@ -41,6 +41,22 @@ const BuildOrder& StrategyManager::getOpeningBookBuildOrder() const
     }
 }
 
+const bool StrategyManager::shouldBuildNow() const
+{
+        std::vector<int> buildTimes = { 7, 12, 22, 32, 42, 52 };
+        int frame = BWAPI::Broodwar->getFrameCount();
+        int minute = frame / (24 * 60);
+        int numBunkers = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker);
+        for (size_t i(0); i < buildTimes.size(); ++i)
+        {
+            if (numBunkers < (i + 3) && minute > buildTimes[i])
+            {
+                return true;
+            }
+        }
+        return false;
+}
+
 const bool StrategyManager::shouldExpandNow() const
 {
     // if there is no place to expand to, we can't expand
@@ -126,10 +142,16 @@ const MetaPairVector StrategyManager::getProtossBuildOrderGoal() const
     int numReaver = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Reaver);
     int numDarkTeplar = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Dark_Templar);
     int numCorsair = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Corsair);
+    int numGateway = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Protoss_Gateway);
 
-
-
-    if (Config::Strategy::StrategyName == "Protoss_ZealotRush")
+    if (Config::Strategy::StrategyName == "Protoss_Corsair")
+    {
+    if (numGateway > 0)
+        goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Zealot, numZealots + 3));
+    if (numCorsair <= 6)
+        goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Corsair, numCorsair + 1));
+    }
+    else if (Config::Strategy::StrategyName == "Protoss_ZealotRush")
     {
         goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Zealot, numZealots + 8));
 
@@ -148,7 +170,7 @@ const MetaPairVector StrategyManager::getProtossBuildOrderGoal() const
         if (numZealots == 0)
         {
             goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Zealot, numZealots + 4));
-            goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Shuttle, 1));
+            goal.push_back(MetaPair(BWAPI::UnitTypes::Protoss_Shuttle, 2));
         }
         else
         {
@@ -215,8 +237,18 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal() const
     int numTanks = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Tank_Mode)
         + UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Siege_Tank_Siege_Mode);
     int numBay = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Engineering_Bay);
+    int numBunkers = UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Terran_Bunker);
 
-    if (Config::Strategy::StrategyName == "Terran_MarineRush")
+
+    if (Config::Strategy::StrategyName == "Terran_Defense")
+    {   
+        goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, 4));
+        goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Firebat, 7));
+        if (numMedics < 3)
+            goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Medic, numMedics + 1));
+    }
+
+    else if (Config::Strategy::StrategyName == "Terran_MarineRush")
     {
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Marine, numMarines + 8));
         if (numMarines > 5)
@@ -257,6 +289,10 @@ const MetaPairVector StrategyManager::getTerranBuildOrderGoal() const
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_SCV, numWorkers + 10));
     }
 
+   if (shouldBuildNow()) {
+       goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Terran_Bunker, numBunkers + 1));
+    }
+
     return goal;
 }
 
@@ -292,22 +328,14 @@ const MetaPairVector StrategyManager::getZergBuildOrderGoal() const
     {
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Hydralisk, numHydras + 10));
 
-
         goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Drone, numDrones + 6));
-
 
         if (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Spire) > 0)
             goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Mutalisk, numMutas + 10));
 
-    //    if (BWAPI::Broodwar->self()->minerals() > 300 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk_Den) > 0)
-      //      goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Muscular_Augments, 1));
-
-    //    if (BWAPI::Broodwar->self()->minerals() > 300 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Hydralisk_Den) > 0)
-      //      goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Grooved_Spines, 1));
-
-        if (numDrones == 0) {
+        if (numDrones == 0) 
             goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Drone, numDrones + 6));
-        }
+        
 
         if (BWAPI::Broodwar->self()->minerals() > 200 && UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Lair) > 0)
             goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Spire, 2));
@@ -315,15 +343,11 @@ const MetaPairVector StrategyManager::getZergBuildOrderGoal() const
         if (numHydras > 15)
             goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Zergling, zerglings + 10));
 
-        if (zerglings > 5)
-            goal.push_back(std::pair<MetaType, int>(BWAPI::UpgradeTypes::Metabolic_Boost, 1));
-
         if (numEvolutionChamber == 0 && BWAPI::Broodwar->self()->minerals() > 500 && numHydras > 15)
             goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Evolution_Chamber, 2));
 
         if (numEvolutionChamber == 1)
             goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Evolution_Chamber, 2));
-
 
         if (BWAPI::Broodwar->self()->minerals() > 500)
             goal.push_back(std::pair<MetaType, int>(BWAPI::UnitTypes::Zerg_Creep_Colony, numCreep + 1));

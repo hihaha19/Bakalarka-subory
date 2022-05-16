@@ -142,7 +142,7 @@ void BaseLocationManager::onFrame()
 
     drawBaseLocations();
 
-    // reset the player occupation information for each location
+    // resetovanie informácie o okupovaní lokácií nejakım hráèom (nami alebo nepriate¾om)  
     for (auto & baseLocation : m_baseLocationData)
     {
         baseLocation.setPlayerOccupying(BWAPI::Broodwar->self(), false);

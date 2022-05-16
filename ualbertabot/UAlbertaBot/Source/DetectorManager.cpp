@@ -49,37 +49,20 @@ void DetectorManager::executeMicro(const BWAPI::Unitset & targets)
 
     // for each detectorUnit
     int tentoFramePoslany = 0;
-    int poslanyDetektor = 0;
     for (auto& detectorUnit : detectorUnits)
     {
-        // if we need to regroup, move the detectorUnit to that location
-      /*  if (!detectorUnitInBattle && unitClosestToEnemy && unitClosestToEnemy->getPosition().isValid())
-        {
-            printf("regroup\n");
-            Micro::SmartMove(detectorUnit, unitClosestToEnemy->getPosition());
-            detectorUnitInBattle = true;
-        }*/
-        // otherwise there is no battle or no closest to enemy so we don't want our detectorUnit to die
-        // send him to scout around the map
-      //  else
-        //{
-            int sirka = BWAPI::Broodwar->mapWidth() * 32 - 200;
-            int vyska = BWAPI::Broodwar->mapHeight() * 32 - 200;
-            
+            int sirkaPreSkautovanie = BWAPI::Broodwar->mapWidth() * 32 - 200;
+            int vyskaPreSkautovanie = BWAPI::Broodwar->mapHeight() * 32 - 200;
 
+            BWAPI::Position LavyDolny(300, vyskaPreSkautovanie);
+            BWAPI::Position PravyDolny(sirkaPreSkautovanie, vyskaPreSkautovanie);
+            BWAPI::Position PravyHorny(sirkaPreSkautovanie, 300);
+            BWAPI::Position LavyHorny(300, 300);           
 
-            // vyska 96*32 =3072 , sirka 128*32 = 4096
-            // 3072/2 = 1536    4096/2 = 2048
-
-            BWAPI::Position LavyDolny(300, vyska);           // dobre BM     300, vyska
-            BWAPI::Position PravyDolny(sirka, vyska);         // dobre BM      sirka, vyska
-            BWAPI::Position PravyHorny(sirka, 300);          // dobre BM      sirka, 200
-            BWAPI::Position LavyHorny(300, 300);           // dobre BM     300, 300
-
-            BWAPI::Position LavyDolnyOproti(400, vyska+100);           // dobre BM     300, vyska
-            BWAPI::Position PravyDolnyOproti(sirka-100, vyska-100);         // dobre BM      sirka, vyska
-            BWAPI::Position PravyHornyOproti(sirka-100, 300 - 100);          // dobre BM      sirka, 200
-            BWAPI::Position LavyHornyOproti(400, 300 + 100);           // dobre BM     300, 300
+            BWAPI::Position LavyDolnyOproti(400, vyskaPreSkautovanie +100);
+            BWAPI::Position PravyDolnyOproti(sirkaPreSkautovanie -100, vyskaPreSkautovanie -100);
+            BWAPI::Position PravyHornyOproti(sirkaPreSkautovanie -100, 300 - 100);
+            BWAPI::Position LavyHornyOproti(400, 300 + 100);           
 
 
             BWAPI::Position startLokacia = (BWAPI::Position)BWAPI::Broodwar->self()->getStartLocation();
@@ -87,17 +70,21 @@ void DetectorManager::executeMicro(const BWAPI::Unitset & targets)
 
             int hybajuciOverlordi = 0;
 
-            if (BWAPI::Broodwar->getFrameCount() > 14000 && poslanyDetektor == 0 && BWAPI::Broodwar->getFrameCount() % 72 == 0) {
+            // zistim vysku a sirku mapy v build tiloch, vynasobim ju *32, aby bola v pixeloch
+            int sirka = BWAPI::Broodwar->mapWidth() * 32;
+            int vyska = BWAPI::Broodwar->mapHeight() * 32;
+            if (BWAPI::Broodwar->getFrameCount() > 14000) {     //ak preslo 10 minut
+                //ak sa Overlord (detectorUnit) nepohybuje a nenachadza sa v nami definovanom obdlzniku, vygeneruju sa mu nahodne
+                // suradnice
                  if (!detectorUnit->isMoving() && (detectorUnit->getLeft() < sirka*0.25 || detectorUnit->getLeft() > sirka*0.75) && (detectorUnit->getBottom() < vyska*0.25 || 
                     detectorUnit->getBottom() > vyska*0.75) ) {
                     
                     int x_suradnica = sirka * 0.25 + (rand() % static_cast<int>(sirka * 0.75 - sirka * 0.25 + 1));
                     int y_suradnica = vyska * 0.25 + (rand() % static_cast<int>(vyska * 0.75 - vyska * 0.25 + 1));
-                    printf("Vyska %d, sirka %d\n", y_suradnica, x_suradnica);
                     Micro::SmartMove(detectorUnit, BWAPI::Position(x_suradnica, y_suradnica));
-                    poslanyDetektor = 1;
                 }
 
+                 // v opacnom pripade, ked sa nehybe a nachadza sa v obdlzniku, vrati sa na startovaciu lokaciu
                 else if(!detectorUnit->isMoving()) {
                     Micro::SmartMove(detectorUnit, startLokacia);
                 }
@@ -118,8 +105,8 @@ void DetectorManager::executeMicro(const BWAPI::Unitset & targets)
                 double vzdialenostPD = detectorUnit->getDistance(PravyDolny);
                 double vzdialenostPH = detectorUnit->getDistance(PravyHorny);
 
-                // printf("Id je %d, hybe sa %d\n", detectorUnit->getID(), detectorUnit->isMoving());
-                 // ak mam presne 2880. frame, skontrolujem, ci sa už nejaká jednotka pohybuje, ak nie tak ju pošlem pohybova sa 
+
+                 // ak mam menej ako 2880. frame, skontrolujem, ci sa už nejaká jednotka pohybuje, ak nie tak ju pošlem pohybova sa 
                 if (BWAPI::Broodwar->getFrameCount() < 2880 || (UnitUtil::GetAllUnitCount(BWAPI::UnitTypes::Zerg_Overlord) == 1 &&
                     !detectorUnit->isMoving())) { // && BWAPI::Broodwar->getFrameCount() < 2900) {
                     int uzSaPohybuje = 0;
@@ -144,11 +131,16 @@ void DetectorManager::executeMicro(const BWAPI::Unitset & targets)
                     }
                 }
 
+                // ak presli cca 2 minuty od zaciatku zapasu alebo mame minutu, ktora je delitelna 4, napriklad 4., 8. minuta... a v tomto frame sme este neposlali
+                // overlorda skautovat a jednotka ktoru prave chceme poslat sa nehybe a zaroven sa nenachadza v ziadnom rohu a mame neparny pocet pohybujucich sa 
+                // overlordov a zaroven este nepreslo 10 minut zo zapasu, tak posleme overlorda na skauting (mal by to byt napriklad 2. overlord)
                 if ((BWAPI::Broodwar->getFrameCount() == 2880 || BWAPI::Broodwar->getFrameCount() % 5760 == 0) &&
                     !detectorUnit->isMoving() && detectorUnit->getPosition() != LavyDolny && detectorUnit->getPosition() != LavyHorny &&
                     detectorUnit->getPosition() != PravyDolny && detectorUnit->getPosition() != PravyHorny && hybajuciOverlordi % 2 != 0 &&
                     tentoFramePoslany == 0 && BWAPI::Broodwar->getFrameCount() < 14000) {
                     tentoFramePoslany = 1;
+
+                    // zistovanie, ktory roh po spawnuti ma overlord najblizsie
                     if (vzdialenostLD <= vzdialenostLH && vzdialenostLD <= vzdialenostPD && vzdialenostLD <= vzdialenostPH)
                         Micro::SmartMove(detectorUnit, LavyDolnyOproti);
 
@@ -207,14 +199,10 @@ void DetectorManager::executeMicro(const BWAPI::Unitset & targets)
                     Micro::SmartMove(detectorUnit, PravyDolnyOproti);
             }
             
+            //ak bolo na overlorda v poslednych framoch zautocene, vrati sa na startovaciu lokaciu
             if (detectorUnit->isUnderAttack())
                 Micro::SmartMove(detectorUnit, startLokacia);
             
-
-     //   } // prve je stlpec, druhy je riadok
-        
-        // alchymist vyska = sirka = 128
-     
     }
 }
 

@@ -164,11 +164,11 @@ void GameCommander::setScoutUnits()
 		
 	/*	for (auto& unit : BWAPI::Broodwar->self()->getUnits()) {
 			if (unit->getType() == BWAPI::UnitTypes::Zerg_Zergling) {
-				BWAPI::Unit overLord = unit;
-				if (overLord)
+				BWAPI::Unit zergling_skaut = unit;
+				if (zergling_skaut)
 				{
-					Global::Scout().setWorkerScout(overLord);
-					assignUnit(overLord, m_scoutUnits);
+					Global::Scout().setWorkerScout(zergling_skaut);
+					assignUnit(zergling_skaut, m_scoutUnits);
 					m_initialScoutSet = true;
 				}
 				break;

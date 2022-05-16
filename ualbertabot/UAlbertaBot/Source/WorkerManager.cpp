@@ -240,6 +240,8 @@ void WorkerManager::handleIdleWorkers()
         }
     }
 
+    // v prieèinku \BWAPI_440\ExampleAIModule som nasla tento kod, presuva workerov po vytazeni mineralov zo startovacej lokacie
+    // a 1. expanzie na ostatne expanzie, kod z toho priecinka konci na //closure: if idle
     for (auto& u : m_workerData.getWorkers()) {
             // if our worker is idle
             if (u->isIdle())
@@ -262,7 +264,6 @@ void WorkerManager::handleIdleWorkers()
 
                 } // closure: has no powerup
             } // closure: if idle
-        
     }
 }
 
