@@ -225,7 +225,7 @@ void ProductionManager::update()
             {
                 BWAPI::Broodwar->printf("nemam chamber");
             }
-            m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Zerg_Extractor), true);
+            m_queue.queueAsHighestPriority(MetaType(BWAPI::UnitTypes::Zerg_Evolution_Chamber), true);
         }
         
     }
